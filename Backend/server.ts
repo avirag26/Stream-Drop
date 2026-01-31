@@ -7,7 +7,7 @@ import connectDB from './src/config/db';
 import authRoutes from './src/routes/auth/authRoutes';
 import boxRoutes from './src/routes/box/box.routes';
 import adminRoutes from './src/routes/admin/adminRoutes';
-// import { setupSocketHandlers } from './src/socket/socketHandler';
+import { setupSocketHandlers } from './src/socket/socketHandler';
 
 dotenv.config();
 
@@ -42,7 +42,7 @@ app.get('/', (_req, res) => {
     res.send('StreamDrop API is running....');
 });
 
-// setupSocketHandlers(io);
+setupSocketHandlers(io);
 
 httpServer.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
