@@ -99,6 +99,17 @@ export const resendOtp = createAsyncThunk('auth/resendOtp', async (data: { email
     }
 });
 
+export const googleLogin = createAsyncThunk('auth/googleLogin', async (credential: string, thunkApi) => {
+    try {
+        const response = await api.post('/auth/google-login', { credential });
+        if (response.data.success) {
+            return response.data.data;
+        }
+    } catch (error: any) {
+        return thunkApi.rejectWithValue(error.response.data.message || "Google login failed");
+    }
+});
+
 const authSlice = createSlice({
     name: 'auth',
     initialState,
@@ -212,6 +223,21 @@ const authSlice = createSlice({
             })
             .addCase(resendOtp.rejected, (state, action) => {
                 state.resendLoading = false;
+                state.error = action.payload as string;
+            })
+            .addCase(googleLogin.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(googleLogin.fulfilled, (state, action) => {
+                state.loading = false;
+                state.user = action.payload.user;
+                state.token = action.payload.token;
+                localStorage.setItem('token', action.payload.token);
+                localStorage.setItem('user', JSON.stringify(action.payload.user));
+            })
+            .addCase(googleLogin.rejected, (state, action) => {
+                state.loading = false;
                 state.error = action.payload as string;
             });
     }

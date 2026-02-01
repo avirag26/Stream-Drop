@@ -46,9 +46,16 @@ export const adminLogin = createAsyncThunk('admin/login', async (credentials: an
 
 export const fetchAllUsers = createAsyncThunk(
     'admin/fetchAllUsers',
-    async ({ page, limit }: { page: number; limit: number }, thunkApi) => {
+    async ({ page, limit, search, status }: { page: number; limit: number; search?: string; status?: string }, thunkApi) => {
         try {
-            const response = await api.get(`/admin/users?page=${page}&limit=${limit}`);
+            let url = `/admin/users?page=${page}&limit=${limit}`;
+            if (search && search.trim()) {
+                url += `&search=${encodeURIComponent(search.trim())}`;
+            }
+            if (status && status !== 'ALL STATUS') {
+                url += `&status=${encodeURIComponent(status)}`;
+            }
+            const response = await api.get(url);
             return response.data; 
         } catch (error: any) {
             return thunkApi.rejectWithValue(error.response?.data?.message || "Failed to fetch users");

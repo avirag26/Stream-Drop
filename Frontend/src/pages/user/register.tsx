@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { registerUser, clearError } from '../../store/slice/authSlice';
+import GoogleLoginButtonDirect from '../../components/common/GoogleLoginButtonDirect';
 import type { AppDispatch, RootState } from '../../store/store';
 
 const Register: React.FC = () => {
@@ -191,6 +192,16 @@ const Register: React.FC = () => {
                   <a href="#" className="text-blue-400 hover:text-blue-300">Privacy Policy</a>
                 </p>
               </form>
+
+              {/* Divider */}
+              <div className="flex items-center my-6">
+                <div className="flex-1 border-t border-gray-600"></div>
+                <span className="px-4 text-gray-400 text-sm">or</span>
+                <div className="flex-1 border-t border-gray-600"></div>
+              </div>
+
+              {/* Google Signup */}
+              <GoogleLoginButtonDirect />
             </div>
 
             {/* Right Side - Features (Keep your existing static UI) */}

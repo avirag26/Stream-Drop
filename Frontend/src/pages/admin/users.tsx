@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAllUsers, toggleBlockUser } from '../../store/slice/adminSlice';
 import type { AppDispatch, RootState } from '../../store/store';
@@ -10,15 +10,45 @@ const UserList: React.FC = () => {
     const dispatch = useDispatch<AppDispatch>();
     const { users, pagination, loading } = useSelector((state: RootState) => state.admin);
     const [page, setPage] = useState(1);
+    const [searchTerm, setSearchTerm] = useState('');
     const [selectedFilter, setSelectedFilter] = useState('ALL PLANS');
     const [selectedStatus, setSelectedStatus] = useState('ALL STATUS');
     const [toast, setToast] = useState({ show: false, message: '', type: 'info' as 'success' | 'error' | 'info' });
     const [toggleLoading, setToggleLoading] = useState<string | null>(null);
     const limit = 8;
 
+    // Debounced search function
+    const debouncedFetchUsers = useCallback(
+        debounce((search: string, status: string, currentPage: number) => {
+            dispatch(fetchAllUsers({ 
+                page: currentPage, 
+                limit, 
+                search: search.trim() || undefined, 
+                status: status !== 'ALL STATUS' ? status : undefined 
+            }));
+        }, 500),
+        [dispatch, limit]
+    );
+
     useEffect(() => {
-        dispatch(fetchAllUsers({ page, limit }));
-    }, [dispatch, page]);
+        debouncedFetchUsers(searchTerm, selectedStatus, page);
+    }, [searchTerm, selectedStatus, page, debouncedFetchUsers]);
+
+    // Reset to page 1 when search or filter changes
+    useEffect(() => {
+        if (page !== 1) {
+            setPage(1);
+        }
+    }, [searchTerm, selectedStatus]);
+
+    // Debounce utility function
+    function debounce<T extends (...args: any[]) => any>(func: T, delay: number): T {
+        let timeoutId: ReturnType<typeof setTimeout>;
+        return ((...args: any[]) => {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => func.apply(null, args), delay);
+        }) as T;
+    }
 
     // Updated to include Blocked/Suspended logic
     const getStatusColor = (user: any) => {
@@ -50,8 +80,13 @@ const UserList: React.FC = () => {
             const result = await dispatch(toggleBlockUser(userId)).unwrap();
             console.log('Toggle result:', result);
             
-            // Refresh the users list to ensure UI is updated
-            dispatch(fetchAllUsers({ page, limit }));
+            // Refresh the users list with current search and filter parameters
+            dispatch(fetchAllUsers({ 
+                page, 
+                limit, 
+                search: searchTerm.trim() || undefined, 
+                status: selectedStatus !== 'ALL STATUS' ? selectedStatus : undefined 
+            }));
             
             const action = isBlocked ? 'unblocked' : 'blocked';
             setToast({
@@ -100,6 +135,35 @@ const UserList: React.FC = () => {
                         <p className="text-gray-500 text-sm font-mono">SYSTEM_CONTROL // USER_MANAGEMENT_v1.0</p>
                     </div>
                     <div className="flex space-x-3">
+                        {/* Search Bar */}
+                        <div className="relative">
+                            <input
+                                type="text"
+                                placeholder="Search users..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="px-4 py-2 pl-10 bg-gray-900 text-gray-300 rounded-lg text-sm border border-gray-800 focus:outline-none focus:border-cyan-500 transition-all w-64"
+                            />
+                            <svg 
+                                className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 transform -translate-y-1/2" 
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                            >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            {searchTerm && (
+                                <button
+                                    onClick={() => setSearchTerm('')}
+                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            )}
+                        </div>
+                        
                         <select 
                             value={selectedFilter}
                             onChange={(e) => setSelectedFilter(e.target.value)}
@@ -234,7 +298,28 @@ const UserList: React.FC = () => {
                                     }) : (
                                         <tr>
                                             <td colSpan={6} className="text-center py-20">
-                                                <div className="text-gray-500 text-sm">No users found</div>
+                                                <div className="flex flex-col items-center justify-center space-y-4">
+                                                    <svg className="w-12 h-12 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                                    </svg>
+                                                    <div className="text-gray-500 text-sm">
+                                                        {searchTerm || selectedStatus !== 'ALL STATUS' 
+                                                            ? 'No users match your search criteria' 
+                                                            : 'No users found in system'
+                                                        }
+                                                    </div>
+                                                    {(searchTerm || selectedStatus !== 'ALL STATUS') && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setSearchTerm('');
+                                                                setSelectedStatus('ALL STATUS');
+                                                            }}
+                                                            className="px-4 py-2 bg-cyan-600 text-white rounded-lg text-xs hover:bg-cyan-500 transition-colors"
+                                                        >
+                                                            Clear Filters
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     )
@@ -246,7 +331,8 @@ const UserList: React.FC = () => {
                     {/* Footer / Pagination */}
                     <div className="px-6 py-5 bg-black/20 border-t border-gray-800 flex items-center justify-between">
                         <div className="text-gray-500 text-[10px] font-bold uppercase tracking-widest">
-                            Showing {((page - 1) * limit) + 1} - {Math.min(page * limit, pagination?.totalUsers || 0)} of {pagination?.totalUsers || 0} units
+                            Showing {((page - 1) * limit) + 1} - {Math.min(page * limit, pagination?.totalUsers || 0)} of {pagination?.totalUsers || 0} 
+                            {(searchTerm || selectedStatus !== 'ALL STATUS') ? ' filtered' : ''} units
                         </div>
                         
                         <div className="flex items-center space-x-2">

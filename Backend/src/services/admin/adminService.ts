@@ -37,12 +37,10 @@ export class AdminAuthService{
         }
     }
 
-    async listUsers(page:number,limit:number){
-        const result = await this.adminRepo.findAllUsers(page,limit);
-        if(!result.users || result.users.length === 0){
-            throw new Error ("No users found in system")
-        }
-         return result;
+    async listUsers(page:number,limit:number,search?:string,status?:string){
+        const result = await this.adminRepo.findAllUsers(page,limit,search,status);
+        // Don't throw error if no users found - just return empty result
+        return result;
     }
 
     async toogleBlockStatus(userId:string){

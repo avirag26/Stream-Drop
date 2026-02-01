@@ -8,6 +8,7 @@ import VerifyOtp from '../pages/user/verify-otp';
 import ForgotPassword from '../pages/user/forgot-password';
 import ResetPassword from '../pages/user/reset-password';
 import BoxPage from '../pages/user/box';
+import NotFound from '../pages/NotFound';
 
 const UserRoutes: React.FC = () => {
   return (
@@ -20,6 +21,8 @@ const UserRoutes: React.FC = () => {
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/box/:boxCode" element={<BoxPage />} />
+      {/* Catch-all route for 404 */}
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 };

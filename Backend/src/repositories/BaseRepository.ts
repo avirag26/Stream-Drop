@@ -15,4 +15,8 @@ export abstract class BaseRepository<T extends Document>implements IBaseReposito
    async findOne(filter: object): Promise<T | null> {
      return await this.model.findOne(filter)
    }
+
+   async updateById(id: string, updateData: Partial<T>): Promise<T | null> {
+     return await this.model.findByIdAndUpdate(id, { $set: updateData }, { new: true });
+   }
 }

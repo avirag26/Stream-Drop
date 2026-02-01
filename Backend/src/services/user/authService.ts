@@ -4,8 +4,13 @@ import jwt from 'jsonwebtoken';
 import { IUser } from "@/interface/user/user.interface";
 import redisClient from "@/config/redis"; 
 import { mailService } from "../mail/mail.service";
+import { OAuth2Client } from 'google-auth-library';
 export class AuthService {
-    constructor(private userRepo: UserRepository) {}
+    private googleClient: OAuth2Client;
+
+    constructor(private userRepo: UserRepository) {
+        this.googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    }
 
     
     async preRegister(userData: IUser) {
@@ -169,10 +174,82 @@ export class AuthService {
 
     await redisClient.setEx(`reset_otp:${email}`, 300, otp);
 
-    // Send new OTP via email
+    
     await mailService.sendOTP(email, otp);
     
     return { success: true };
+   }
+
+   async googleLogin(credential: string) {
+    try {
+      
+        const ticket = await this.googleClient.verifyIdToken({
+            idToken: credential,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+
+        const payload = ticket.getPayload();
+        if (!payload) {
+            throw new Error('Invalid Google token');
+        }
+
+        const { email, name, picture, sub: googleId } = payload;
+
+        if (!email || !name) {
+            throw new Error('Missing required Google profile information');
+        }
+
+        let user = await this.userRepo.findByEmail(email);
+
+        if (user) {
+         
+            if (!user.googleId) {
+                const updatedUser = await this.userRepo.updateById(user._id.toString(), { 
+                    googleId,
+                    avatar: picture 
+                });
+                user = updatedUser || user;
+            }
+        } else {
+           
+            user = await this.userRepo.create({
+                name,
+                email,
+                password: '', 
+                googleId,
+                avatar: picture,
+                is_verified: true, 
+                tier: 'free'
+            });
+        }
+
+        if (!user) {
+            throw new Error("Failed to create or retrieve user");
+        }
+
+        if (user.is_blocked) {
+            throw new Error("Account has been suspended");
+        }
+
+        const token = jwt.sign(
+            { id: user._id, tier: user.tier },
+            process.env.JWT_SECRET as string,
+            { expiresIn: '7d' }
+        );
+
+        return {
+            user: { 
+                id: user._id, 
+                name: user.name, 
+                email: user.email, 
+                tier: user.tier,
+                avatar: user.avatar 
+            },
+            token
+        };
+    } catch (error: any) {
+        throw new Error(`Google authentication failed: ${error.message}`);
+    }
    }
 }
 

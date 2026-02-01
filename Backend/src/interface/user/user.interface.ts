@@ -6,7 +6,9 @@ export interface IUser{
     password:string;
     is_blocked:boolean;
     is_verified:boolean;
-    tier:boolean;
+    tier:string;
+    googleId?:string;
+    avatar?:string;
     createdAt?:Date;
     updatedAt?:Date;
 }

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { googleLogin } from '../../store/slice/authSlice';
+import { useGoogleOAuth } from '../providers/GoogleOAuthProvider';
 import type { AppDispatch, RootState } from '../../store/store';
 
 interface GoogleLoginButtonProps {
@@ -14,31 +15,43 @@ const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
 }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { loading } = useSelector((state: RootState) => state.auth);
-  const [isGoogleReady, setIsGoogleReady] = useState(false);
-
-  useEffect(() => {
-    const checkGoogleReady = () => {
-      if (window.google && window.google.accounts) {
-        setIsGoogleReady(true);
-      } else {
-        setTimeout(checkGoogleReady, 100);
-      }
-    };
-    checkGoogleReady();
-  }, []);
+  const { isLoaded, error } = useGoogleOAuth();
 
   const handleGoogleLogin = () => {
-    if (!isGoogleReady || !window.google) {
+    if (!isLoaded || !window.google) {
       console.error('Google Identity Services not ready');
       return;
     }
 
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    console.log('Using Google Client ID:', clientId);
+
+    // Try using renderButton instead of prompt
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.display = 'none';
+    document.body.appendChild(buttonContainer);
+
     window.google.accounts.id.initialize({
-      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+      client_id: clientId,
       callback: handleCredentialResponse,
     });
 
-    window.google.accounts.id.prompt();
+    window.google.accounts.id.renderButton(buttonContainer, {
+      theme: 'filled_blue',
+      size: 'large',
+      text: 'signin_with',
+    });
+
+    // Programmatically click the hidden button
+    const googleButton = buttonContainer.querySelector('div[role="button"]') as HTMLElement;
+    if (googleButton) {
+      googleButton.click();
+    }
+
+    // Clean up
+    setTimeout(() => {
+      document.body.removeChild(buttonContainer);
+    }, 1000);
   };
 
   const handleCredentialResponse = (response: { credential: string }) => {
@@ -47,11 +60,19 @@ const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
     }
   };
 
+  if (error) {
+    return (
+      <div className="w-full p-3 text-red-400 text-sm text-center bg-red-500/10 border border-red-500/20 rounded-lg">
+        Google OAuth Error: {error}
+      </div>
+    );
+  }
+
   return (
     <button
       type="button"
       onClick={handleGoogleLogin}
-      disabled={loading || !isGoogleReady}
+      disabled={loading || !isLoaded}
       className={`w-full flex items-center justify-center px-4 py-3 border border-gray-600 rounded-lg text-white bg-gray-800 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${className}`}
     >
       {loading ? (
@@ -76,7 +97,7 @@ const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
           />
         </svg>
       )}
-      {loading ? 'Signing in...' : !isGoogleReady ? 'Loading...' : text}
+      {loading ? 'Signing in...' : !isLoaded ? 'Loading Google...' : text}
     </button>
   );
 };

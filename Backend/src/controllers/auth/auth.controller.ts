@@ -133,6 +133,24 @@ export class AuthController {
             });
         }
     };
+
+    public googleLogin = async (req: Request, res: Response): Promise<void> => {
+        try {
+            const { credential } = req.body;
+            const result = await this.authService.googleLogin(credential);
+            
+            res.status(200).json({
+                success: true,
+                message: "Google login successful",
+                data: result
+            });
+        } catch (error: any) {
+            res.status(400).json({
+                success: false,
+                message: error.message || "Google login failed"
+            });
+        }
+    };
 }
 
 export const authController = new AuthController(authService);

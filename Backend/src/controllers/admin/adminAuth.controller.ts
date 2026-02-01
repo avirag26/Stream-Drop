@@ -43,7 +43,10 @@ export class AdminAuthController {
         try {
             const page = parseInt(req.query.page as string) || 1;
             const limit = parseInt(req.query.limit as string) || 10;
-            const result = await adminAuthService.listUsers(page,limit);
+            const search = req.query.search as string;
+            const status = req.query.status as string;
+            
+            const result = await adminAuthService.listUsers(page,limit,search,status);
             res.status(200).json({
                 success:true,
                 message:"User retrived successfully",

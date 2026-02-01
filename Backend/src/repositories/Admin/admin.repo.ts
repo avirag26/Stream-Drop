@@ -10,11 +10,40 @@ export class AdminRepository extends BaseRepository<IAdminDocument>{
     async findByEmail(email:string):Promise<IAdminDocument|null>{
         return await this.model.findOne({email:email.toLowerCase()});
     }
-    async findAllUsers(page:number,limit:number){
+    async findAllUsers(page:number,limit:number,search?:string,status?:string){
         const skip=(page-1)*limit;
+        
+        // Build query object
+        let query: any = {};
+        
+        // Add search functionality
+        if (search && search.trim()) {
+            query.$or = [
+                { name: { $regex: search.trim(), $options: 'i' } },
+                { email: { $regex: search.trim(), $options: 'i' } }
+            ];
+        }
+        
+        // Add status filter
+        if (status && status !== 'ALL STATUS') {
+            switch (status) {
+                case 'ACTIVE':
+                    query.is_verified = true;
+                    query.is_blocked = false;
+                    break;
+                case 'PENDING':
+                    query.is_verified = false;
+                    query.is_blocked = false;
+                    break;
+                case 'SUSPENDED':
+                    query.is_blocked = true;
+                    break;
+            }
+        }
+        
         const [users,totalUsers] = await Promise.all([
-            User.find().select('-password').sort({createdAt:-1}).skip(skip).limit(limit),
-            User.countDocuments()
+            User.find(query).select('-password').sort({createdAt:-1}).skip(skip).limit(limit),
+            User.countDocuments(query)
         ])
         return {
             users,

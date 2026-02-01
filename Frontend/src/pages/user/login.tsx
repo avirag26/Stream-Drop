@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginUser, clearError } from '../../store/slice/authSlice';
+import GoogleLoginButtonDirect from '../../components/common/GoogleLoginButtonDirect';
 
 import type { AppDispatch, RootState } from '../../store/store';
 
@@ -143,6 +144,16 @@ const Login: React.FC = () => {
                 </Link>
               </div>
             </form>
+
+            {/* Divider */}
+            <div className="flex items-center my-6">
+              <div className="flex-1 border-t border-gray-600"></div>
+              <span className="px-4 text-gray-400 text-sm">or</span>
+              <div className="flex-1 border-t border-gray-600"></div>
+            </div>
+
+            {/* Google Login */}
+            <GoogleLoginButtonDirect />
           </div>
 
           {/* Security Notice */}
