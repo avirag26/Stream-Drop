@@ -5,6 +5,7 @@ import type { RootState } from '../../store/store';
 import { socketService } from '../../services/socket';
 import Layout from '../../components/user/Layout';
 import api from '../../services/api';
+import Toast from '../../components/common/Toast';
 
 interface Message {
   id: string;
@@ -40,6 +41,11 @@ const BoxPage: React.FC = () => {
   const [newMessage, setNewMessage] = useState('');
   const [connectedUsers, setConnectedUsers] = useState<ConnectedUser[]>([]);
   const [activeUsers, setActiveUsers] = useState(0);
+  const [toast, setToast] = useState<{message: string, type: 'success' | 'error', show: boolean}>({
+    message: '',
+    type: 'success',
+    show: false
+  });
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -190,7 +196,11 @@ const BoxPage: React.FC = () => {
   const copyBoxLink = () => {
     const link = `${window.location.origin}/box/${boxCode}`;
     navigator.clipboard.writeText(link);
-    
+    setToast({
+      message: "Box link copied to clipboard!",
+      type: 'success',
+      show: true
+    });
   };
 
   if (loading) {
@@ -420,6 +430,14 @@ const BoxPage: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Toast Component */}
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          isVisible={toast.show}
+          onClose={() => setToast(prev => ({ ...prev, show: false }))}
+        />
       </div>
     </Layout>
   );

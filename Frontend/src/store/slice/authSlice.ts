@@ -6,6 +6,7 @@ interface AuthState {
     token: string | null;
     loading: boolean;
     error: string | null;
+    success: string | null;
     resetStep: number;
     tempEmail: string | null;
     resetToken: string | null;
@@ -20,6 +21,7 @@ const initialState: AuthState = {
     token: localStorage.getItem('token') || null,
     loading: false,
     error: null,
+    success: null,
     resetStep: 1,
     tempEmail: null,
     resetToken: null,
@@ -61,7 +63,7 @@ export const loginUser = createAsyncThunk('auth/login', async (credentials: any,
 
 export const forgotPassword = createAsyncThunk('auth/forgotPassword', async (email: string, thunkApi) => {
     try {
-        const response = await api.post('/auth/forgot-password', { email });
+        await api.post('/auth/forgot-password', { email });
         return { email }
     } catch (error: any) {
         return thunkApi.rejectWithValue(error.response.data.message || "Failed to send OTP");
@@ -96,17 +98,22 @@ const authSlice = createSlice({
             state.user = null
             state.token = null
             state.error = null
+            state.success = null
             localStorage.removeItem('token');
             localStorage.removeItem('user');
         },
         clearError: (state) => {
             state.error = null;
         },
+        clearSuccess: (state) => {
+            state.success = null;
+        },
         resetForgotPasswordState: (state) => {
             state.resetStep = 1;
             state.tempEmail = null;
             state.resetToken = null;
             state.error = null;
+            state.success = null;
         },
         cancelVerification: (state) => {
             state.isVerifying = false;
@@ -115,10 +122,10 @@ const authSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
-            .addCase(registerUser.pending, (state) => { state.loading = true; state.error = null; })
+            .addCase(registerUser.pending, (state) => { state.loading = true; state.error = null; state.success = null; })
             .addCase(registerUser.fulfilled, (state, action) => {
                 state.loading = false;
-               
+                state.success = "Registration successful! Please check your email for verification.";
                 if (action.payload) {
                     state.isVerifying = true;
                     state.tempEmail = action.payload.email;
@@ -128,10 +135,11 @@ const authSlice = createSlice({
                 state.loading = false;
                 state.error = action.payload as string;
             })
-            .addCase(verifyAccountOtp.pending, (state) => { state.loading = true; state.error = null; })
+            .addCase(verifyAccountOtp.pending, (state) => { state.loading = true; state.error = null; state.success = null; })
             .addCase(verifyAccountOtp.fulfilled, (state, action) => {
                 state.loading = false;
                 state.isVerifying = false;
+                state.success = "Account verified successfully! Welcome to StreamDrop.";
                 state.user = action.payload.user;
                 state.token = action.payload.token;
                 localStorage.setItem('token', action.payload.token);
@@ -141,9 +149,10 @@ const authSlice = createSlice({
                 state.loading = false;
                 state.error = action.payload as string;
             })
-            .addCase(loginUser.pending, (state) => { state.loading = true; state.error = null; })
+            .addCase(loginUser.pending, (state) => { state.loading = true; state.error = null; state.success = null; })
             .addCase(loginUser.fulfilled, (state, action) => {
                 state.loading = false;
+                state.success = "Login successful! Welcome back.";
                 state.user = action.payload.user;
                 state.token = action.payload.token;
                 localStorage.setItem('token', action.payload.token);
@@ -153,9 +162,10 @@ const authSlice = createSlice({
                 state.loading = false;
                 state.error = action.payload as string
             })
-            .addCase(forgotPassword.pending, (state) => { state.loading = true; state.error = null; })
+            .addCase(forgotPassword.pending, (state) => { state.loading = true; state.error = null; state.success = null; })
             .addCase(forgotPassword.fulfilled, (state, action) => {
                 state.loading = false;
+                state.success = "OTP sent successfully! Please check your email.";
                 state.tempEmail = action.payload.email;
                 state.resetStep = 2;
             })
@@ -166,10 +176,12 @@ const authSlice = createSlice({
             .addCase(verifyResetOtp.pending, (state) => { 
                 state.loading = true; 
                 state.error = null; 
+                state.success = null;
             })
             .addCase(verifyResetOtp.fulfilled, (state, action) => {
                 console.log('verifyResetOtp.fulfilled payload:', action.payload);
                 state.loading = false;
+                state.success = "OTP verified successfully! You can now reset your password.";
                 state.resetToken = action.payload.resetToken;
                 state.resetStep = 3;
                 console.log('Updated state:', { resetToken: state.resetToken, resetStep: state.resetStep });
@@ -180,6 +192,7 @@ const authSlice = createSlice({
             })
             .addCase(finalizeReset.fulfilled, (state) => {
                 state.loading = false;
+                state.success = "Password reset successful! You can now login with your new password.";
                 state.resetStep = 1;
                 state.tempEmail = null;
                 state.resetToken = null;
@@ -188,5 +201,5 @@ const authSlice = createSlice({
     }
 })
 
-export const { logout, clearError, resetForgotPasswordState, cancelVerification } = authSlice.actions;
+export const { logout, clearError, clearSuccess, resetForgotPasswordState, cancelVerification } = authSlice.actions;
 export default authSlice.reducer

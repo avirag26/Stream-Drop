@@ -1,20 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { registerUser,clearError} from '../../store/slice/authSlice';
+import { registerUser, clearError, clearSuccess } from '../../store/slice/authSlice';
 import type { AppDispatch, RootState } from '../../store/store';
+import Toast from '../../components/common/Toast';
 
 const Register: React.FC = () => {
 
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    password: ''
+    password: '',
+    confirmPassword: ''
   });
+
+  const [passwordError, setPasswordError] = useState('');
+  const [showToast, setShowToast] = useState(false);
 
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
-  const { loading, error, isVerifying, tempEmail } = useSelector((state: RootState) => state.auth);
+  const { loading, error, success, isVerifying, tempEmail } = useSelector((state: RootState) => state.auth);
 
   useEffect(() => {
     if (isVerifying && tempEmail) {
@@ -22,20 +27,46 @@ const Register: React.FC = () => {
     }
   }, [isVerifying, tempEmail, navigate]);
 
+  useEffect(() => {
+    if (success) {
+      setShowToast(true);
+    }
+  }, [success]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-   
     if (error) dispatch(clearError());
+    if (success) dispatch(clearSuccess());
     
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value
     });
+
+    // Clear password error when user starts typing
+    if (name === 'password' || name === 'confirmPassword') {
+      setPasswordError('');
+    }
   };
 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    dispatch(registerUser(formData));
+    
+    // Validate password confirmation
+    if (formData.password !== formData.confirmPassword) {
+      setPasswordError('Passwords do not match');
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setPasswordError('Password must be at least 6 characters long');
+      return;
+    }
+
+    // Submit only required fields
+    const { confirmPassword, ...submitData } = formData;
+    dispatch(registerUser(submitData));
   };
 
   return (
@@ -73,6 +104,13 @@ const Register: React.FC = () => {
                 {error && (
                   <div className="p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-400 text-sm animate-pulse">
                     {error}
+                  </div>
+                )}
+
+                {/* Password Error */}
+                {passwordError && (
+                  <div className="p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-400 text-sm animate-pulse">
+                    {passwordError}
                   </div>
                 )}
 
@@ -118,6 +156,22 @@ const Register: React.FC = () => {
                     name="password"
                     required
                     value={formData.password}
+                    onChange={handleChange}
+                    placeholder="••••••••"
+                    className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all"
+                  />
+                </div>
+
+                {/* Confirm Password Field */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Confirm Password
+                  </label>
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    required
+                    value={formData.confirmPassword}
                     onChange={handleChange}
                     placeholder="••••••••"
                     className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all"
@@ -206,6 +260,17 @@ const Register: React.FC = () => {
           <div className="text-gray-500">© 2026 StreamDrop. All rights reserved.</div>
         </div>
       </footer>
+
+      {/* Toast Component */}
+      <Toast
+        message={success || ''}
+        type="success"
+        isVisible={showToast}
+        onClose={() => {
+          setShowToast(false);
+          dispatch(clearSuccess());
+        }}
+      />
     </div>
   );
 };

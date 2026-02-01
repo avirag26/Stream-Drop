@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Layout from '../../components/user/Layout';
 import api from '../../services/api'; 
 import { Loader2, Check, Copy, Globe, Lock, Play } from 'lucide-react';
+import Toast from '../../components/common/Toast';
 
 const Dashboard: React.FC = () => {
   const [boxName, setBoxName] = useState('');
@@ -10,13 +11,22 @@ const Dashboard: React.FC = () => {
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
   const [generatedBoxName, setGeneratedBoxName] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [toast, setToast] = useState<{message: string, type: 'success' | 'error', show: boolean}>({
+    message: '',
+    type: 'success',
+    show: false
+  });
 
 
   const handleStartStreaming = async () => {
     if (loading) return;
     
     if (!boxName.trim()) {
-      alert("Please enter a box name");
+      setToast({
+        message: "Please enter a box name",
+        type: 'error',
+        show: true
+      });
       return;
     }
     
@@ -30,10 +40,19 @@ const Dashboard: React.FC = () => {
       if (response.data.success) {
         setGeneratedCode(response.data.data.boxCode);
         setGeneratedBoxName(response.data.data.boxName);
+        setToast({
+          message: `Box "${response.data.data.boxName}" created successfully!`,
+          type: 'success',
+          show: true
+        });
       }
     } catch (error: any) {
       console.error("Creation Error:", error);
-      alert(error.response?.data?.message || "Failed to create box. Please try again.");
+      setToast({
+        message: error.response?.data?.message || "Failed to create box. Please try again.",
+        type: 'error',
+        show: true
+      });
     } finally {
       setLoading(false);
     }
@@ -44,6 +63,11 @@ const Dashboard: React.FC = () => {
     const link = `streamdrop.com/box/${generatedCode}`;
     navigator.clipboard.writeText(link);
     setCopied(true);
+    setToast({
+      message: "Box link copied to clipboard!",
+      type: 'success',
+      show: true
+    });
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -269,6 +293,14 @@ const Dashboard: React.FC = () => {
 
           </div>
         </div>
+
+        {/* Toast Component */}
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          isVisible={toast.show}
+          onClose={() => setToast(prev => ({ ...prev, show: false }))}
+        />
       </div>
     </Layout>
   );

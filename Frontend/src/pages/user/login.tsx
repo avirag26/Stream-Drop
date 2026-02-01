@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { loginUser, clearError } from '../../store/slice/authSlice';
+import { loginUser, clearError, clearSuccess } from '../../store/slice/authSlice';
+import Toast from '../../components/common/Toast';
 
 import type { AppDispatch, RootState } from '../../store/store';
 
@@ -12,20 +13,31 @@ const Login: React.FC = () => {
     password: ''
   });
 
+  const [showToast, setShowToast] = useState(false);
+
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
-  const { loading, error, user, token } = useSelector((state: RootState) => state.auth);
+  const { loading, error, success, user, token } = useSelector((state: RootState) => state.auth);
 
- 
   useEffect(() => {
     if (user && token) {
       navigate('/');
     }
   }, [user, token, navigate]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    if (success) {
+      setShowToast(true);
+      // Navigate after showing success message
+      setTimeout(() => {
+        navigate('/');
+      }, 1500);
+    }
+  }, [success, navigate]);
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (error) dispatch(clearError());
+    if (success) dispatch(clearSuccess());
     
     setCredentials({
       ...credentials,
@@ -164,6 +176,17 @@ const Login: React.FC = () => {
             <span className="text-green-400 text-sm">All systems operational</span>
           </div>
         </div>
+
+        {/* Toast Component */}
+        <Toast
+          message={success || ''}
+          type="success"
+          isVisible={showToast}
+          onClose={() => {
+            setShowToast(false);
+            dispatch(clearSuccess());
+          }}
+        />
       </div>
     </div>
   );
