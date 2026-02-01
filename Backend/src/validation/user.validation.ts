@@ -60,3 +60,29 @@ export const createBoxSchema = Joi.object({
   
     description: Joi.string().max(100).optional()
 });
+
+export const resetPasswordSchema = Joi.object({
+    email: Joi.string()
+        .trim()
+        .email()
+        .required()
+        .messages({
+            'string.email': 'Please provide a valid email address',
+            'any.required': 'Email is required'
+        }),
+    token: Joi.string()
+        .required()
+        .messages({
+            'any.required': 'Reset token is required'
+        }),
+    password: Joi.string()
+        .pattern(/^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*])[^\s]+$/)
+        .trim()
+        .min(8)
+        .required()
+        .messages({
+            'string.pattern.base': 'Password must include at least one letter, one number, and one special character with no spaces',
+            'string.min': 'Password must be at least 8 characters long',
+            'any.required': 'Password is a required field'
+        })
+});

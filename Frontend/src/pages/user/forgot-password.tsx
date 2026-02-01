@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { forgotPassword, verifyResetOtp, clearError, resetForgotPasswordState } from '../../store/slice/authSlice';
+import { forgotPassword, verifyResetOtp, clearError, resetForgotPasswordState, resendOtp } from '../../store/slice/authSlice';
 import type { AppDispatch, RootState } from '../../store/store';
 
 const ForgotPassword: React.FC = () => {
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
+  const [resendTimer, setResendTimer] = useState(60);
+  const [canResend, setCanResend] = useState(false);
   
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
-  const { loading, error, resetStep, tempEmail, resetToken } = useSelector((state: RootState) => state.auth);
+  const { loading, error, resetStep, tempEmail, resetToken, resendLoading } = useSelector((state: RootState) => state.auth);
 
   console.log('Current state:', { loading, error, resetStep, tempEmail, resetToken });
 
@@ -21,6 +23,35 @@ const ForgotPassword: React.FC = () => {
       navigate('/reset-password');
     }
   }, [resetToken, navigate]);
+
+  // Timer effect for resend functionality
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    
+    if (resetStep === 2 && resendTimer > 0 && !canResend) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => {
+          if (prev <= 1) {
+            setCanResend(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [resendTimer, canResend, resetStep]);
+
+  // Reset timer when OTP is resent successfully
+  useEffect(() => {
+    if (resetStep === 2) {
+      setResendTimer(60);
+      setCanResend(false);
+    }
+  }, [resetStep]);
 
   const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,6 +77,12 @@ const ForgotPassword: React.FC = () => {
   const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setOtp(e.target.value);
     if (error) dispatch(clearError());
+  };
+
+  const handleResendOtp = () => {
+    if (tempEmail && canResend) {
+      dispatch(resendOtp({ email: tempEmail, type: 'reset' }));
+    }
   };
 
   return (
@@ -172,9 +209,27 @@ const ForgotPassword: React.FC = () => {
               {resetStep === 2 && (
                 <button
                   type="button"
-                  className="text-blue-400 hover:text-blue-300 transition-colors"
+                  onClick={handleResendOtp}
+                  disabled={!canResend || resendLoading}
+                  className={`transition-colors ${
+                    canResend && !resendLoading
+                      ? 'text-blue-400 hover:text-blue-300 cursor-pointer'
+                      : 'text-gray-500 cursor-not-allowed'
+                  }`}
                 >
-                  Resend Code
+                  {resendLoading ? (
+                    <span className="flex items-center space-x-1">
+                      <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Sending...</span>
+                    </span>
+                  ) : canResend ? (
+                    'Resend Code'
+                  ) : (
+                    `Resend in ${resendTimer}s`
+                  )}
                 </button>
               )}
             </div>

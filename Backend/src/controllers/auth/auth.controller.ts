@@ -102,6 +102,37 @@ export class AuthController {
         res.status(400).json({ success: false, message: error.message });
     }
     };
+
+    public resendOtp = async (req: Request, res: Response): Promise<void> => {
+        try {
+            const { email, type } = req.body; 
+            
+            if (type === 'registration') {
+                const result = await this.authService.resendRegistrationOtp(email);
+                res.status(200).json({
+                    success: true,
+                    message: "OTP resent successfully",
+                    data: { otp: result.otp }
+                });
+            } else if (type === 'reset') {
+                await this.authService.resendResetOtp(email);
+                res.status(200).json({
+                    success: true,
+                    message: "Reset OTP resent successfully"
+                });
+            } else {
+                res.status(400).json({
+                    success: false,
+                    message: "Invalid OTP type"
+                });
+            }
+        } catch (error: any) {
+            res.status(400).json({
+                success: false,
+                message: error.message || "Failed to resend OTP"
+            });
+        }
+    };
 }
 
 export const authController = new AuthController(authService);

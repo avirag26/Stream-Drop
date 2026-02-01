@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { finalizeReset, clearError, resetForgotPasswordState } from '../../store/slice/authSlice';
+import { finalizeReset, clearError } from '../../store/slice/authSlice';
 import type { AppDispatch, RootState } from '../../store/store';
 
 const ResetPassword: React.FC = () => {
@@ -22,18 +22,15 @@ const ResetPassword: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Clear any existing local errors
+    setPasswordError('');
+    
+    // Basic frontend validation
     if (password !== confirmPassword) {
       setPasswordError('Passwords do not match');
       return;
     }
-    
-    if (password.length < 6) {
-      setPasswordError('Password must be at least 6 characters');
-      return;
-    }
 
-    setPasswordError('');
-    
     if (tempEmail && resetToken) {
       dispatch(finalizeReset({
         email: tempEmail,
@@ -43,6 +40,7 @@ const ResetPassword: React.FC = () => {
         if (result.type === 'auth/finalizeReset/fulfilled') {
           navigate('/login');
         }
+        // Backend validation errors will be automatically handled by Redux and shown in the error state
       });
     }
   };
@@ -108,6 +106,9 @@ const ResetPassword: React.FC = () => {
                     className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all"
                   />
                 </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  Must be at least 8 characters with letters, numbers, and special characters
+                </p>
               </div>
 
               <div>

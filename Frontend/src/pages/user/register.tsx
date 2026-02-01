@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { registerUser, clearError, clearSuccess } from '../../store/slice/authSlice';
+import { registerUser, clearError } from '../../store/slice/authSlice';
 import type { AppDispatch, RootState } from '../../store/store';
-import Toast from '../../components/common/Toast';
 
 const Register: React.FC = () => {
 
@@ -15,11 +14,10 @@ const Register: React.FC = () => {
   });
 
   const [passwordError, setPasswordError] = useState('');
-  const [showToast, setShowToast] = useState(false);
 
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
-  const { loading, error, success, isVerifying, tempEmail } = useSelector((state: RootState) => state.auth);
+  const { loading, error, isVerifying, tempEmail } = useSelector((state: RootState) => state.auth);
 
   useEffect(() => {
     if (isVerifying && tempEmail) {
@@ -27,15 +25,8 @@ const Register: React.FC = () => {
     }
   }, [isVerifying, tempEmail, navigate]);
 
-  useEffect(() => {
-    if (success) {
-      setShowToast(true);
-    }
-  }, [success]);
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (error) dispatch(clearError());
-    if (success) dispatch(clearSuccess());
     
     const { name, value } = e.target;
     setFormData({
@@ -260,17 +251,6 @@ const Register: React.FC = () => {
           <div className="text-gray-500">© 2026 StreamDrop. All rights reserved.</div>
         </div>
       </footer>
-
-      {/* Toast Component */}
-      <Toast
-        message={success || ''}
-        type="success"
-        isVisible={showToast}
-        onClose={() => {
-          setShowToast(false);
-          dispatch(clearSuccess());
-        }}
-      />
     </div>
   );
 };

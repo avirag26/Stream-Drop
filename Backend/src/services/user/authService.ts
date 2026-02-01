@@ -133,6 +133,47 @@ export class AuthService {
     await redisClient.del(`reset_token:${email}`);
     return { success: true };
    }
+
+   async resendRegistrationOtp(email: string) {
+    // Check if there's a pending registration for this email
+    const cachedData = await redisClient.get(`temp_user:${email}`);
+    if (!cachedData) throw new Error("No pending registration found for this email");
+
+    const userData = JSON.parse(cachedData);
+    
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    
+  
+    userData.otp = otp;
+    
+ 
+    await redisClient.setEx(
+        `temp_user:${email}`,
+        600,
+        JSON.stringify(userData)
+    );
+
+   
+    await mailService.sendOTP(email, otp);
+    
+    return { email, otp };
+   }
+
+   async resendResetOtp(email: string) {
+ 
+    const user = await this.userRepo.findByEmail(email);
+    if (!user) throw new Error("No account found with this email");
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await redisClient.setEx(`reset_otp:${email}`, 300, otp);
+
+    // Send new OTP via email
+    await mailService.sendOTP(email, otp);
+    
+    return { success: true };
+   }
 }
 
 export const authService = new AuthService(userRepository);
