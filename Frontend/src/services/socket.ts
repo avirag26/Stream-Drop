@@ -6,63 +6,88 @@ class SocketService {
     public socket: Socket | null = null;
     private currentRoom: string | null = null;
     private currentUser: string | null = null;
+    private isConnected: boolean = false;
 
     connect() {
+        if (this.socket && this.isConnected) {
+            return; // Already connected
+        }
+
         this.socket = io(SOCKET_URL, {
-            withCredentials: true
+            withCredentials: true,
+            transports: ['websocket', 'polling']
         });
         
         this.socket.on('connect', () => {
             console.log('Connected to StreamDrop:', this.socket?.id);
+            this.isConnected = true;
         });
 
         this.socket.on('disconnect', () => {
             console.log('Disconnected from StreamDrop');
+            this.isConnected = false;
+        });
+
+        this.socket.on('connect_error', (error) => {
+            console.error('Socket connection error:', error);
+            this.isConnected = false;
+        });
+
+        // Wait for connection before proceeding
+        return new Promise<void>((resolve) => {
+            if (this.socket) {
+                this.socket.on('connect', () => {
+                    resolve();
+                });
+            }
         });
     }
 
     joinRoom(roomId: string, userName: string) {
-        if (this.socket) {
+        if (this.socket && this.isConnected) {
             this.currentRoom = roomId;
             this.currentUser = userName;
+            console.log(`Joining room ${roomId} as ${userName}`);
             this.socket.emit('join_room', { roomId, userName });
+        } else {
+            console.warn('Socket not connected, cannot join room');
         }
     }
 
     sendMessage(roomId: string, message: string, sender: string) {
-        if (this.socket) {
+        if (this.socket && this.isConnected) {
+            console.log(`Sending message to room ${roomId}:`, message);
             this.socket.emit('send_message', { roomId, message, sender });
-        }
-    }
-
-    shareFile(roomId: string, fileName: string, fileSize: string, sender: string) {
-        if (this.socket) {
-            this.socket.emit('file_shared', { roomId, fileName, fileSize, sender });
+        } else {
+            console.warn('Socket not connected, cannot send message');
         }
     }
 
     startTyping(roomId: string, userName: string) {
-        if (this.socket) {
+        if (this.socket && this.isConnected) {
             this.socket.emit('typing_start', { roomId, userName });
         }
     }
 
     stopTyping(roomId: string, userName: string) {
-        if (this.socket) {
+        if (this.socket && this.isConnected) {
             this.socket.emit('typing_stop', { roomId, userName });
         }
     }
 
     getRoomInfo(roomId: string) {
-        if (this.socket) {
+        if (this.socket && this.isConnected) {
             this.socket.emit('get_room_info', roomId);
         }
     }
 
-    // Event listeners
     onMessage(callback: (data: any) => void) {
         if (this.socket) {
-            this.socket.on('receive_message', callback);
+            console.log('👂 Setting up message listener');
+            this.socket.on('receive_message', (data) => {
+                console.log('📥 Received message:', data);
+                callback(data);
+            });
         }
     }
 
@@ -84,12 +109,6 @@ class SocketService {
         }
     }
 
-    onFileNotification(callback: (data: any) => void) {
-        if (this.socket) {
-            this.socket.on('file_notification', callback);
-        }
-    }
-
     onUserTyping(callback: (data: any) => void) {
         if (this.socket) {
             this.socket.on('user_typing', callback);
@@ -102,7 +121,6 @@ class SocketService {
         }
     }
 
-    // Clean up listeners
     removeAllListeners() {
         if (this.socket) {
             this.socket.removeAllListeners();
@@ -115,6 +133,7 @@ class SocketService {
             this.socket = null;
             this.currentRoom = null;
             this.currentUser = null;
+            this.isConnected = false;
         }
     }
 
@@ -124,6 +143,10 @@ class SocketService {
 
     getCurrentUser() {
         return this.currentUser;
+    }
+
+    isSocketConnected() {
+        return this.isConnected;
     }
 }
 

@@ -28,7 +28,7 @@ const PORT = process.env.PORT || 5000;
 connectDB();
 
 app.use(cors({
-    origin: 'http://localhost:5173',
+    origin: ['http://localhost:5173', 'http://localhost:5174'],
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
     credentials: true
 }));
@@ -45,5 +45,5 @@ app.get('/', (_req, res) => {
 setupSocketHandlers(io);
 
 httpServer.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`🚀 Server is running on http://localhost:${PORT}`);
 });
