@@ -15,6 +15,13 @@ export class BoxRepository extends BaseRepository<IBoxDocument>{
     return await this.model.findOne({ creatorId: userId }).sort({ createdAt: -1 });
 
      }
+
+     async deleteBox(boxId:string,creatorId:string){
+        return await Box.findOneAndDelete({
+            _id:boxId,
+            creatorId:creatorId
+        })
+     }
 }
 
 export const boxRepository = new BoxRepository();

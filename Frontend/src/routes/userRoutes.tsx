@@ -9,6 +9,7 @@ import ForgotPassword from '../pages/user/forgot-password';
 import ResetPassword from '../pages/user/reset-password';
 import BoxPage from '../pages/user/box';
 import NotFound from '../pages/NotFound';
+import AuthGuard from '../components/common/AuthGuard';
 
 const UserRoutes: React.FC = () => {
   return (
@@ -19,9 +20,13 @@ const UserRoutes: React.FC = () => {
       <Route path="/verify-otp" element={<VerifyOtp />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/box/:boxCode" element={<BoxPage />} />
-      {/* Catch-all route for 404 */}
+      
+      {/* Protected Routes */}
+      <Route element={<AuthGuard />}>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/box/:boxCode" element={<BoxPage />} />
+      </Route>
+      
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

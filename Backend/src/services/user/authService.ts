@@ -180,6 +180,10 @@ export class AuthService {
     return { success: true };
    }
 
+   async getUserById(userId: string) {
+        return await this.userRepo.findById(userId);
+    }
+
    async googleLogin(credential: string) {
     try {
       

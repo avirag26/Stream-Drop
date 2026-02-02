@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { AuthService, authService } from '@/services/user/authService';
+import { AuthRequest } from '@/middlewares/auth.middleware';
 
 export class AuthController {
     constructor(private authService: AuthService) {}
@@ -148,6 +149,30 @@ export class AuthController {
             res.status(400).json({
                 success: false,
                 message: error.message || "Google login failed"
+            });
+        }
+    };
+    public checkStatus = async (req: AuthRequest, res: Response): Promise<void> => {
+        try {
+            const userId = req.user!.id;
+            const user = await this.authService.getUserById(userId);
+            
+            if (!user || user.is_blocked) {
+                res.status(403).json({
+                    success: false,
+                    message: "Account suspended"
+                });
+                return;
+            }
+
+            res.status(200).json({
+                success: true,
+                message: "Active"
+            });
+        } catch (error: any) {
+            res.status(401).json({
+                success: false,
+                message: "Invalid session"
             });
         }
     };

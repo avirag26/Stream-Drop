@@ -79,5 +79,25 @@ export class BoxController {
         })
        }
     }
+
+    public deleteBox = async(req:AuthRequest,res:Response):Promise<void>=>{
+        try {
+            const {boxId} = req.params
+            const userId = req.user!.id
+
+            const result = await this.boxService.removeBox(boxId as string,userId)
+
+            res.status(200).json({
+                success:true,
+                 message:"Box deleted successfully",
+                 data:result
+            })
+        } catch (error:any) {
+            res.status(400).json({
+                success:false,
+                message:error.message
+            })
+        }
+    }
 }
 export const boxController = new BoxController(boxService);

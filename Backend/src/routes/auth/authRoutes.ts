@@ -2,6 +2,7 @@ import { Router } from "express";
 import { authController } from "@/controllers/auth/auth.controller";
 import { validate } from "@/middlewares/validate";
 import { registerSchema, resetPasswordSchema } from "@/validation/user.validation";
+import { AuthMiddleware } from "@/middlewares/auth.middleware";
 
 const router = Router()
 
@@ -20,5 +21,7 @@ router.post('/reset-password', validate(resetPasswordSchema), authController.res
 router.post('/resend-otp', authController.resendOtp);
 
 router.post('/google-login', authController.googleLogin);
+
+router.get('/status', AuthMiddleware.verifyToken, authController.checkStatus);
 
 export default router;

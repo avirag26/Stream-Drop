@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import type { RootState } from '../../store/store';
+import { useSelector, useDispatch } from 'react-redux';
+import { deleteBox } from '../../store/slice/boxSlice';
+import type { RootState, AppDispatch } from '../../store/store';
 import { socketService } from '../../services/socket';
 import Layout from '../../components/user/Layout';
 import api from '../../services/api';
 import Toast from '../../components/common/Toast';
+import ConfirmModal from '../../components/common/ConfirmModal';
 
 interface Message {
   id: string;
@@ -22,6 +24,7 @@ interface ConnectedUser {
 }
 
 interface BoxData {
+  _id: string;
   boxCode: string;
   boxName: string;
   creatorId: string;
@@ -33,7 +36,8 @@ const BoxPage: React.FC = () => {
   const { boxCode } = useParams<{ boxCode: string }>();
   const navigate = useNavigate();
   const { user } = useSelector((state: RootState) => state.auth);
-  
+  const { loading: boxLoading } = useSelector((state: RootState) => state.boxes);
+  const dispatch = useDispatch<AppDispatch>();
   const [boxData, setBoxData] = useState<BoxData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,6 +50,7 @@ const BoxPage: React.FC = () => {
     type: 'success',
     show: false
   });
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -115,7 +120,7 @@ const BoxPage: React.FC = () => {
 
   
     socketService.onMessage((data: any) => {
-      console.log('📥 Message received in component:', data);
+      console.log(' Message received in component:', data);
       const newMsg: Message = {
         id: data.id || `${Date.now()}-${Math.random()}`,
         sender: data.sender,
@@ -173,24 +178,44 @@ const BoxPage: React.FC = () => {
   };
 
   const handleCloseBox = async () => {
-    if (!boxCode || !user) return;
+    if (!boxCode || !user || !boxData) return;
     
-    if (window.confirm('Are you sure you want to close this box? This will disconnect all users.')) {
-      try {
-     
-        if (boxData?.creatorId === user.id) {
-         
-          // await api.delete(`/box/${boxCode}`);
-          navigate('/dashboard');
-        } else {
-          // Regular users just leave the box
-          socketService.disconnect();
-          navigate('/dashboard');
-        }
-      } catch (error) {
-        console.error('Error closing box:', error);
+    try {
+      if (boxData?.creatorId === user.id) {
+        // Use Redux action to delete the box
+        await dispatch(deleteBox(boxData._id)).unwrap();
+        setToast({
+          message: "Box deleted successfully",
+          type: 'success',
+          show: true
+        });
+        navigate('/dashboard');
+      } else {
+        // Regular users just leave the box
+        socketService.disconnect();
+        navigate('/dashboard');
       }
+    } catch (error: any) {
+      console.error('Error closing box:', error);
+      setToast({
+        message: error || "Failed to delete box",
+        type: 'error',
+        show: true
+      });
     }
+  };
+
+  const handleCloseBoxClick = () => {
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmClose = () => {
+    setShowConfirmModal(false);
+    handleCloseBox();
+  };
+
+  const handleCancelClose = () => {
+    setShowConfirmModal(false);
   };
 
   const copyBoxLink = () => {
@@ -322,10 +347,11 @@ const BoxPage: React.FC = () => {
                 Copy Link
               </button>
               <button 
-                onClick={handleCloseBox}
-                className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-500 transition-colors"
+                onClick={handleCloseBoxClick}
+                disabled={boxLoading}
+                className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {boxData?.creatorId === user?.id ? 'Close Box' : 'Leave Box'}
+                {boxLoading ? 'Processing...' : (boxData?.creatorId === user?.id ? 'Close Box' : 'Leave Box')}
               </button>
             </div>
           </div>
@@ -437,6 +463,22 @@ const BoxPage: React.FC = () => {
           type={toast.type}
           isVisible={toast.show}
           onClose={() => setToast(prev => ({ ...prev, show: false }))}
+        />
+
+        {/* Confirm Modal */}
+        <ConfirmModal
+          isOpen={showConfirmModal}
+          title={boxData?.creatorId === user?.id ? "Close Box" : "Leave Box"}
+          message={
+            boxData?.creatorId === user?.id 
+              ? "Are you sure you want to close this box? This will permanently delete the box and disconnect all users."
+              : "Are you sure you want to leave this box? You can rejoin using the box code."
+          }
+          confirmText={boxData?.creatorId === user?.id ? "Close Box" : "Leave Box"}
+          cancelText="Cancel"
+          onConfirm={handleConfirmClose}
+          onCancel={handleCancelClose}
+          type="danger"
         />
       </div>
     </Layout>

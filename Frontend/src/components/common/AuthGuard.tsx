@@ -1,38 +1,47 @@
 import { useEffect, useState } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import type { RootState } from '../../store/store';
+import { useSelector, useDispatch } from 'react-redux';
+import type { RootState, AppDispatch } from '../../store/store';
+import { logout } from '../../store/slice/authSlice';
 import api from '../../services/api';
 
 const AuthGuard = () => {
-    const [status, setStatus] = useState<'loading' | 'active' | 'blocked'>('loading');
+    const [checking, setChecking] = useState(true);
     const { user, token } = useSelector((state: RootState) => state.auth);
+    const dispatch = useDispatch<AppDispatch>();
 
     useEffect(() => {
-        const verifyStatus = async () => {
-            // Check if user has token first
+        const checkUserStatus = async () => {
             if (!token || !user) {
-                console.log('No token or user found, redirecting to login');
-                setStatus('blocked');
+                setChecking(false);
                 return;
             }
 
             try {
-                console.log('Verifying auth status with token:', token);
                 await api.get('/auth/status');
-                console.log('Auth verification successful');
-                setStatus('active');
-            } catch (err: any) {
-                console.error('Auth status check failed:', err.response?.data || err.message);
-                setStatus('blocked');
+                setChecking(false);
+            } catch (error: any) {
+                if (error.response?.status === 403) {
+                    
+                    alert('Your account has been suspended.');
+                }
+                dispatch(logout());
+                setChecking(false);
             }
         };
-        verifyStatus();
-    }, [token, user]);
 
-    if (status === 'loading') return <div>Verifying Security Credentials...</div>;
-    
-    return status === 'active' ? <Outlet /> : <Navigate to="/login" />;
+        checkUserStatus();
+    }, [token, user, dispatch]);
+
+    if (checking) {
+        return (
+            <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+                <div className="text-white">Checking access...</div>
+            </div>
+        );
+    }
+
+    return user && token ? <Outlet /> : <Navigate to="/login" />;
 };
 
 export default AuthGuard;

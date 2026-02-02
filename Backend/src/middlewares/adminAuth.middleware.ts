@@ -22,7 +22,7 @@ export class AdminAuthMiddleware {
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string; role: string };
 
-            // Check if the user has admin role
+           
             if (decoded.role !== 'admin') {
                 res.status(403).json({ success: false, message: "Access denied. Admin privileges required." });
                 return;

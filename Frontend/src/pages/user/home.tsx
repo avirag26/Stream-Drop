@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import Layout from '../../components/user/Layout';
 import api from '../../services/api';
+import Toast from '../../components/common/Toast';
 import type { RootState } from '../../store/store';
 import { Loader2, Plus, ArrowRight, ShieldCheck, Zap, Globe } from 'lucide-react';
 
@@ -13,6 +14,11 @@ const Home: React.FC = () => {
   
   const [joinCode, setJoinCode] = useState('');
   const [isJoining, setIsJoining] = useState(false);
+  const [toast, setToast] = useState<{message: string, type: 'success' | 'error', show: boolean}>({
+    message: '',
+    type: 'success',
+    show: false
+  });
 
 
   const handleCreateBox = () => {
@@ -27,20 +33,26 @@ const Home: React.FC = () => {
   const handleJoinBox = async (e: React.FormEvent) => {
     e.preventDefault();
     if (joinCode.length < 6) {
-      alert("Please enter a 6-digit code");
+      setToast({
+        message: "Please enter a 6-digit code",
+        type: 'error',
+        show: true
+      });
       return;
     }
 
     setIsJoining(true);
     try {
-
       const response = await api.get(`/box/${joinCode}`);
       if (response.data.success) {
-     
         navigate(`/box/${joinCode.toUpperCase()}`);
       }
     } catch (error: any) {
-      alert(error.response?.data?.message || "Invalid or expired box code.");
+      setToast({
+        message: error.response?.data?.message || "Invalid or expired box code.",
+        type: 'error',
+        show: true
+      });
     } finally {
       setIsJoining(false);
     }
@@ -163,6 +175,14 @@ const Home: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Toast Component */}
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          isVisible={toast.show}
+          onClose={() => setToast(prev => ({ ...prev, show: false }))}
+        />
       </div>
     </Layout>
   );

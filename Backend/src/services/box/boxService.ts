@@ -43,7 +43,23 @@ export class BoxService{
     const isExpired = new Date() > new Date(box.expiresAt);
     
     return isExpired ? null : box;
-}
+     }
+    public async removeBox(boxId:string,userId:string){
+        const deletedBox = await this.repo.deleteBox(boxId,userId)
 
+        if(!deletedBox){
+            throw new Error("Box not found or you don't have permission to delete it")
+        }
+
+        return{
+            success:true,
+            message:"Box deleted successfully",
+            deletedBox: {
+                id: deletedBox._id,
+                boxCode: deletedBox.boxCode,
+                boxName: deletedBox.boxName
+            }
+        }
+    }
 }
 export const boxService = new BoxService(boxRepository);

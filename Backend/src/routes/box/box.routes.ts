@@ -4,6 +4,7 @@ import { AuthMiddleware } from "@/middlewares/auth.middleware";
 const router = Router();
 
 router.post('/create',AuthMiddleware.verifyToken,boxController.create)
+router.delete('/delete/:boxId',AuthMiddleware.verifyToken, boxController.deleteBox);
 router.get('/latest', AuthMiddleware.verifyToken, boxController.getLatestBox);
 router.get('/:code', boxController.getBox)
 

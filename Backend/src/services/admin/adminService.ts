@@ -39,7 +39,6 @@ export class AdminAuthService{
 
     async listUsers(page:number,limit:number,search?:string,status?:string){
         const result = await this.adminRepo.findAllUsers(page,limit,search,status);
-        // Don't throw error if no users found - just return empty result
         return result;
     }
 

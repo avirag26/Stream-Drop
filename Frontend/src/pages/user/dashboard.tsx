@@ -75,7 +75,6 @@ const Dashboard: React.FC = () => {
     const resumeSession = async ()=>{
       try {
         const response = await api.get('/box/latest');
-        console.log("response",response)
         if(response.data.success){
           setGeneratedCode(response.data.data.boxCode)
           setGeneratedBoxName(response.data.data.boxName)
