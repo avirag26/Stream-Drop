@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { adminLogout } from '../../store/slice/adminSlice';
+import { logout } from '../../store/slice/adminSlice';
 import type { RootState, AppDispatch } from '../../store/store';
 
 const Header: React.FC = () => {
@@ -10,7 +10,7 @@ const Header: React.FC = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    dispatch(adminLogout());
+    dispatch(logout());
     navigate('/admin/login');
   };
 

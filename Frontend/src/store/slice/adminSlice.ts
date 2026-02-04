@@ -79,13 +79,16 @@ const adminSlice = createSlice({
   name: 'admin',
   initialState,
   reducers: {
-    adminLogout: (state) => {
+    logout: (state) => {
       state.admin = null;
       state.token = null; 
       localStorage.removeItem('adminToken');
       localStorage.removeItem('admin');
     },
-
+    setToken: (state, action) => {
+      state.token = action.payload;
+      localStorage.setItem('adminToken', action.payload);
+    },
     clearAdminError: (state) => {
       state.error = null;
     }
@@ -139,5 +142,5 @@ const adminSlice = createSlice({
   }
 });
 
-export const { adminLogout, clearAdminError } = adminSlice.actions;
+export const { logout, setToken, clearAdminError } = adminSlice.actions;
 export default adminSlice.reducer;

@@ -1,9 +1,18 @@
 import { Request, Response } from 'express';
-import { AuthService, authService } from '@/services/user/authService';
-import { AuthRequest } from '@/middlewares/auth.middleware';
+import { AuthService, authService } from '../../services/user/authService';
+import { AuthRequest } from '../../middlewares/auth.middleware';
 
 export class AuthController {
     constructor(private authService: AuthService) {}
+
+   private setReshCookie(res:Response,token:string){
+    res.cookie('refreshToken',token,{
+        httpOnly:true,
+        secure:process.env.NODE_ENV === 'production',
+        sameSite:'strict',
+        maxAge:7*24*60*60*1000
+    })
+   }
 
     public register = async (req: Request, res: Response): Promise<void> => {
         try {
@@ -30,12 +39,14 @@ export class AuthController {
         try {
             const { email, otp } = req.body;
 
-            const result = await this.authService.verifyAndCreate(email, otp);
+            const {user,accessToken,refreshToken} = await this.authService.verifyAndCreate(email, otp);
+
+            this.setReshCookie(res,refreshToken)
 
             res.status(201).json({
                 success: true,
                 message: "Account verified and created successfully",
-                data: result
+                data: {user,token:accessToken}
             });
         } catch (error: any) {
             res.status(400).json({
@@ -48,12 +59,14 @@ export class AuthController {
     public login = async (req: Request, res: Response): Promise<void> => {
         try {
             const { email, password } = req.body;
-            const result = await this.authService.login(email, password);
+            const {user,accessToken,refreshToken} = await this.authService.login(email, password);
             
+            this.setReshCookie(res,refreshToken);
+
             res.status(200).json({
                 success: true,
                 message: "Login successful",
-                data: result
+                data: {user,token:accessToken}
             });
         } catch (error: any) {
             res.status(401).json({
@@ -138,12 +151,13 @@ export class AuthController {
     public googleLogin = async (req: Request, res: Response): Promise<void> => {
         try {
             const { credential } = req.body;
-            const result = await this.authService.googleLogin(credential);
+            const {user,accessToken,refreshToken} = await this.authService.googleLogin(credential);
             
+            this.setReshCookie(res,refreshToken)
             res.status(200).json({
                 success: true,
                 message: "Google login successful",
-                data: result
+                data: {user,token:accessToken}
             });
         } catch (error: any) {
             res.status(400).json({
@@ -175,6 +189,27 @@ export class AuthController {
                 message: "Invalid session"
             });
         }
+    };
+
+    public refreshToken = async (req:Request,res:Response):Promise<void>=>{
+        try {
+            const token = req.cookies.refreshToken;
+            if(!token) throw new Error("No refresh token provided");
+
+            const {accessToken}=await this.authService.refreshAccessToken(token)
+
+            res.status(200).json({
+                success:true,
+                data:{token:accessToken}
+            })
+        } catch (error:any) {
+            res.status(403).json({ success: false, message: "Invalid session" });
+        }
+    }
+
+    public logout = async (req: Request, res: Response): Promise<void> => {
+        res.clearCookie('refreshToken');
+        res.status(200).json({ success: true, message: "Logged out" });
     };
 }
 

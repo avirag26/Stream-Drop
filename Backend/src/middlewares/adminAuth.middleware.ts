@@ -1,11 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { IPayload } from '../interface/auth/auth.interface';
 
 export interface AdminAuthRequest extends Request {
-    admin?: {
-        id: string;
-        role: string;
-    };
+    admin?: IPayload;
 }
 
 export class AdminAuthMiddleware {
@@ -20,7 +18,7 @@ export class AdminAuthMiddleware {
         const token = authHeader.split(' ')[1];
 
         try {
-            const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string; role: string };
+            const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as IPayload;
 
            
             if (decoded.role !== 'admin') {

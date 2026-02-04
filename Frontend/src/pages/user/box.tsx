@@ -219,7 +219,7 @@ const BoxPage: React.FC = () => {
   };
 
   const copyBoxLink = () => {
-    const link = `${window.location.origin}/box/${boxCode}`;
+    const link = `http://localhost:5173/box/${boxCode}`;
     navigator.clipboard.writeText(link);
     setToast({
       message: "Box link copied to clipboard!",

@@ -121,6 +121,10 @@ const authSlice = createSlice({
             localStorage.removeItem('token');
             localStorage.removeItem('user');
         },
+        setToken: (state, action) => {
+            state.token = action.payload;
+            localStorage.setItem('token', action.payload);
+        },
         clearError: (state) => {
             state.error = null;
         },
@@ -243,5 +247,5 @@ const authSlice = createSlice({
     }
 })
 
-export const { logout, clearError, resetForgotPasswordState, cancelVerification } = authSlice.actions;
+export const { logout, setToken, clearError, resetForgotPasswordState, cancelVerification } = authSlice.actions;
 export default authSlice.reducer

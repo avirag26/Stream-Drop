@@ -1,8 +1,9 @@
 import { AdminRepository,adminRepository } from "../../repositories/Admin/admin.repo.js";
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken'
+import { generateToken, verifyRefreshToken } from "../../utils/jwt.utils";
 import dotenv from 'dotenv'
 dotenv.config()
+
 export class AdminAuthService{
     constructor(private adminRepo:AdminRepository){}
 
@@ -10,12 +11,12 @@ export class AdminAuthService{
         const existing = await this.adminRepo.findByEmail(adminData.email);
         if(existing)throw new Error("Admin account already exist")
         
-            const hashedPassword = await bcrypt.hash(adminData.password,12);
+        const hashedPassword = await bcrypt.hash(adminData.password,12);
 
-            return await this.adminRepo.create({
-                ...adminData,
-                password:hashedPassword
-            })
+        return await this.adminRepo.create({
+            ...adminData,
+            password:hashedPassword
+        })
     }
 
     async login (email:string,pass:string){
@@ -23,17 +24,39 @@ export class AdminAuthService{
         if(!admin) throw new Error("Invalid admin credentials");
 
         const isMatch = await bcrypt.compare(pass,admin.password);
-        if(!isMatch) throw new Error("Invalid adminn credentials");
+        if(!isMatch) throw new Error("Invalid admin credentials");
 
-        const token = jwt.sign(
-            {id:admin._id,role:'admin'},
-            process.env.JWT_SECRET as string,
-            {expiresIn:'1d'}
-        );
+        const {accessToken, refreshToken} = generateToken(admin._id.toString(), 'admin');
 
         return {
             admin:{id:admin._id,name:admin.name,email:admin.email},
-            token
+            accessToken,
+            refreshToken
+        }
+    }
+
+    async refreshAccessToken(token: string) {
+        try {
+            const decoded = verifyRefreshToken(token);
+
+            // Ensure it's an admin token
+            if (decoded.role !== 'admin') {
+                throw new Error("Invalid admin token");
+            }
+
+            const admin = await this.adminRepo.findById(decoded.id);
+            
+            if (!admin) {
+                throw new Error("Admin no longer exists");
+            }
+
+            const tokens = generateToken(admin._id.toString(), 'admin');
+
+            return {
+                accessToken: tokens.accessToken
+            };
+        } catch (error: any) {
+            throw new Error("Invalid or expired admin refresh session");
         }
     }
 

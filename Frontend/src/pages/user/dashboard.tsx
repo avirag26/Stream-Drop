@@ -60,7 +60,7 @@ const Dashboard: React.FC = () => {
 
   const copyLink = () => {
     if (!generatedCode) return;
-    const link = `streamdrop.com/box/${generatedCode}`;
+    const link = `http:localhost:5173/box/${generatedCode}`;
     navigator.clipboard.writeText(link);
     setCopied(true);
     setToast({
@@ -159,7 +159,7 @@ const Dashboard: React.FC = () => {
                       )}
                     </div>
                     <div className="text-gray-400 text-xs mt-1 font-mono truncate">
-                      {generatedCode ? `streamdrop.com/box/${generatedCode}` : '---'}
+                      {generatedCode ? `http://localhost:5173/box/${generatedCode}` : '---'}
                     </div>
                     
                   </div>

@@ -1,10 +1,11 @@
-import { UserRepository, userRepository } from "@/repositories/User/user.repo";
+import { UserRepository, userRepository } from "../../repositories/User/user.repo";
 import bcrypt from "bcryptjs";
 import jwt from 'jsonwebtoken';
-import { IUser } from "@/interface/user/user.interface";
-import redisClient from "@/config/redis"; 
+import { IUser } from "../../interface/user/user.interface";
+import redisClient from "../../config/redis"; 
 import { mailService } from "../mail/mail.service";
 import { OAuth2Client } from 'google-auth-library';
+import { generateToken, verifyRefreshToken } from "../../utils/jwt.utils";
 export class AuthService {
     private googleClient: OAuth2Client;
 
@@ -60,14 +61,10 @@ export class AuthService {
 
    
         await redisClient.del(`temp_user:${email}`);
-
+  
      
-        const token = jwt.sign(
-            { id: newUser._id, tier: newUser.tier },
-            process.env.JWT_SECRET as string,
-            { expiresIn: '7d' }
-        );
-
+        
+        const {accessToken,refreshToken} = generateToken(newUser._id.toString(), 'user', newUser.tier);
         return {
             user: { 
                 id: newUser._id, 
@@ -75,7 +72,8 @@ export class AuthService {
                 email: newUser.email, 
                 tier: newUser.tier 
             },
-            token
+            accessToken,
+            refreshToken
         };
     }
 
@@ -88,16 +86,40 @@ export class AuthService {
 
         if (user.is_blocked) throw new Error("Account has been suspended");
 
-        const token = jwt.sign(
-            { id: user._id, tier: user.tier },
-            process.env.JWT_SECRET as string,
-            { expiresIn: '7d' }
-        );
+      
+        const {accessToken,refreshToken} = generateToken(user._id.toString(), 'user', user.tier);
 
         return {
             user: { id: user._id, name: user.name, email: user.email, tier: user.tier },
-            token
+            accessToken,
+            refreshToken
         };
+    }
+
+    async refreshAccessToken(token: string) {
+        try {
+          
+            const decoded = verifyRefreshToken(token);
+
+            const user = await this.userRepo.findById(decoded.id);
+            
+            if (!user) {
+                throw new Error("User no longer exists");
+            }
+
+            if (user.is_blocked) {
+                throw new Error("Account has been suspended");
+            }
+
+      
+            const tokens = generateToken(user._id.toString(), 'user', user.tier);
+
+            return {
+                accessToken: tokens.accessToken
+            };
+        } catch (error: any) {
+            throw new Error("Invalid or expired refresh session");
+        }
     }
 
     async forgotPasswordRequest(email:string){
@@ -140,7 +162,7 @@ export class AuthService {
    }
 
    async resendRegistrationOtp(email: string) {
-    // Check if there's a pending registration for this email
+   
     const cachedData = await redisClient.get(`temp_user:${email}`);
     if (!cachedData) throw new Error("No pending registration found for this email");
 
@@ -235,12 +257,7 @@ export class AuthService {
             throw new Error("Account has been suspended");
         }
 
-        const token = jwt.sign(
-            { id: user._id, tier: user.tier },
-            process.env.JWT_SECRET as string,
-            { expiresIn: '7d' }
-        );
-
+        const { accessToken, refreshToken } = generateToken(user._id.toString(), 'user', user.tier);
         return {
             user: { 
                 id: user._id, 
@@ -249,7 +266,8 @@ export class AuthService {
                 tier: user.tier,
                 avatar: user.avatar 
             },
-            token
+            accessToken,
+            refreshToken
         };
     } catch (error: any) {
         throw new Error(`Google authentication failed: ${error.message}`);
