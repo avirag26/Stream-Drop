@@ -17,26 +17,26 @@ const rooms: Map<string, Room> = new Map();
 export const setupSocketHandlers = (io: Server) => {
     io.on("connection", (socket: Socket) => {
         console.log(`📡 Device connected: ${socket.id}`);
-        
+
         socket.on("join_room", (data: { roomId: string, userName: string }) => {
             const { roomId, userName } = data;
             socket.join(roomId);
-            
+
             if (!rooms.has(roomId)) {
                 rooms.set(roomId, { id: roomId, users: [], messages: [] });
             }
-            
+
             const room = rooms.get(roomId)!;
             const newUser: User = { id: socket.id, name: userName, socketId: socket.id };
             room.users.push(newUser);
-            
+
             // Notify others
             socket.to(roomId).emit("user_joined_notice", {
                 message: `${userName} has entered the drop zone`,
                 userName: userName,
                 time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             });
-            
+
             // Sync user list
             io.to(roomId).emit("users_updated", {
                 users: room.users.map(u => ({ id: u.id, name: u.name, status: 'online' })),
@@ -79,13 +79,38 @@ export const setupSocketHandlers = (io: Server) => {
                 if (userIndex !== -1) {
                     const user = room.users[userIndex];
                     room.users.splice(userIndex, 1);
-                    io.to(roomId).emit("user_left_notice", { 
+                    io.to(roomId).emit("user_left_notice", {
                         message: `${user.name} left`,
                         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                     });
                     io.to(roomId).emit("users_updated", { users: room.users, count: room.users.length });
                     if (room.users.length === 0) rooms.delete(roomId);
                 }
+            });
+        });
+
+        // --- WEBRTC SIGNALING HANDLERS ---
+
+        
+        socket.on("p2p_offer", (data: { to: string, offer: any }) => {
+
+            socket.to(data.to).emit("p2p_offer", {
+                from: socket.id,
+                offer: data.offer
+            });
+        });
+
+        socket.on("p2p_answer", (data: { to: string, answer: any }) => {
+            socket.to(data.to).emit("p2p_answer", {
+                from: socket.id,
+                answer: data.answer
+            });
+        });
+
+        socket.on("p2p_ice_candidate", (data: { to: string, candidate: any }) => {
+            socket.to(data.to).emit("p2p_ice_candidate", {
+                from: socket.id,
+                candidate: data.candidate
             });
         });
     });

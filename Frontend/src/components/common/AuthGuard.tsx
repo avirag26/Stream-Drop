@@ -23,7 +23,7 @@ const AuthGuard = () => {
             } catch (error: any) {
                 if (error.response?.status === 403) {
                     
-                    alert('Your account has been suspended.');
+                    
                 }
                 dispatch(logout());
                 setChecking(false);

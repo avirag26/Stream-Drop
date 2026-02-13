@@ -45,13 +45,13 @@ const BoxPage: React.FC = () => {
   const [newMessage, setNewMessage] = useState('');
   const [connectedUsers, setConnectedUsers] = useState<ConnectedUser[]>([]);
   const [activeUsers, setActiveUsers] = useState(0);
-  const [toast, setToast] = useState<{message: string, type: 'success' | 'error', show: boolean}>({
+  const [toast, setToast] = useState<{ message: string, type: 'success' | 'error', show: boolean }>({
     message: '',
     type: 'success',
     show: false
   });
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
 
@@ -91,7 +91,7 @@ const BoxPage: React.FC = () => {
     const connectSocket = async () => {
       await socketService.connect();
     };
-    
+
     connectSocket();
 
     return () => {
@@ -104,21 +104,21 @@ const BoxPage: React.FC = () => {
     if (!boxCode || !user || !boxData) return;
 
     console.log('🚪 Attempting to join room:', boxCode, 'as user:', user.name);
-    
+
 
     const joinRoom = async () => {
-    
+
       if (!socketService.isSocketConnected()) {
         await socketService.connect();
       }
-      
-  
+
+
       socketService.joinRoom(boxCode, user.name);
     };
-    
+
     joinRoom();
 
-  
+
     socketService.onMessage((data: any) => {
       console.log(' Message received in component:', data);
       const newMsg: Message = {
@@ -154,12 +154,25 @@ const BoxPage: React.FC = () => {
       setMessages(prev => [...prev, leaveMsg]);
     });
 
+    // Set up users updated listener with P2P initiation
     socketService.onUsersUpdated((data: any) => {
+      console.log('👥 Users updated:', data);
       setConnectedUsers(data.users);
       setActiveUsers(data.count);
+
+      // Small delay to ensure socket handlers are ready
+      setTimeout(() => {
+        // Initiate P2P with all other users
+        data.users.forEach((remoteUser: ConnectedUser) => {
+          if (remoteUser.id !== socketService.socket?.id) {
+            console.log(`🤝 Initiating P2P with: ${remoteUser.name} (${remoteUser.id})`);
+            socketService.initiateP2P(remoteUser.id);
+          }
+        });
+      }, 100);
     });
 
-    
+
     return () => {
       socketService.removeAllListeners();
     };
@@ -179,7 +192,7 @@ const BoxPage: React.FC = () => {
 
   const handleCloseBox = async () => {
     if (!boxCode || !user || !boxData) return;
-    
+
     try {
       if (boxData?.creatorId === user.id) {
         // Use Redux action to delete the box
@@ -278,11 +291,12 @@ const BoxPage: React.FC = () => {
               <span className="text-gray-400 text-xs">{connectedUsers.length} online</span>
             </div>
           </div>
-          
+
           <div className="flex-1 overflow-y-auto">
             {connectedUsers.length > 0 ? (
               connectedUsers.map((connectedUser) => (
-                <div key={connectedUser.id} className="flex items-center p-3 hover:bg-gray-700 transition-colors">
+                /* Added 'group' class to handle hover state for the button */
+                <div key={connectedUser.id} className="flex items-center p-3 hover:bg-gray-700 group transition-colors">
                   <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mr-3">
                     <span className="text-white text-xs font-bold">
                       {connectedUser.name.split(' ').map(n => n[0]).join('')}
@@ -295,6 +309,16 @@ const BoxPage: React.FC = () => {
                       <span className="text-gray-400 text-xs capitalize">{connectedUser.status}</span>
                     </div>
                   </div>
+
+                  {/* P2P TEST BUTTON: Only show if the user is NOT the current device */}
+                  {connectedUser.id !== socketService.socket?.id && (
+                    <button
+                      onClick={() => socketService.sendDirectMessage(connectedUser.id, "Hello P2P!")}
+                      className="hidden group-hover:block px-3 py-1 bg-blue-600 hover:bg-blue-500 text-[10px] text-white rounded-md transition-all"
+                    >
+                      Ping
+                    </button>
+                  )}
                 </div>
               ))
             ) : (
@@ -335,18 +359,18 @@ const BoxPage: React.FC = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-3">
               <button className="text-gray-400 hover:text-white transition-colors">
                 <span className="text-sm">Settings</span>
               </button>
-              <button 
+              <button
                 onClick={copyBoxLink}
                 className="px-3 py-1 bg-gray-700 text-gray-300 rounded text-sm hover:bg-gray-600 transition-colors"
               >
                 Copy Link
               </button>
-              <button 
+              <button
                 onClick={handleCloseBoxClick}
                 disabled={boxLoading}
                 className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -470,7 +494,7 @@ const BoxPage: React.FC = () => {
           isOpen={showConfirmModal}
           title={boxData?.creatorId === user?.id ? "Close Box" : "Leave Box"}
           message={
-            boxData?.creatorId === user?.id 
+            boxData?.creatorId === user?.id
               ? "Are you sure you want to close this box? This will permanently delete the box and disconnect all users."
               : "Are you sure you want to leave this box? You can rejoin using the box code."
           }

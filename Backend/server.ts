@@ -2,6 +2,7 @@ import express, { Application } from "express";
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { createServer } from 'http';
+import cookieParser from "cookie-parser";
 import { Server } from "socket.io";
 import connectDB from './src/config/db';
 import authRoutes from './src/routes/auth/authRoutes';
@@ -26,7 +27,7 @@ const io = new Server(httpServer, {
 const PORT = process.env.PORT || 5000;
 
 connectDB();
-
+app.use(cookieParser())
 app.use(cors({
     origin: ['http://localhost:5173', 'http://localhost:5174'],
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
@@ -45,5 +46,5 @@ app.get('/', (_req, res) => {
 setupSocketHandlers(io);
 
 httpServer.listen(PORT, () => {
-    console.log(`🚀 Server is running on http://localhost:${PORT}`);
+    console.log(` Server is running on http://localhost:${PORT}`);
 });

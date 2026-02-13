@@ -7,6 +7,55 @@ class SocketService {
     private currentRoom: string | null = null;
     private currentUser: string | null = null;
     private isConnected: boolean = false;
+    private peers: Map<string, RTCPeerConnection> = new Map();
+    private dataChannels: Map<string, RTCDataChannel> = new Map();
+
+    private createPeerConnection(remoteSocketId: string) {
+        const pc = new RTCPeerConnection({
+            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        });
+
+
+        pc.onicecandidate = (event) => {
+            if (event.candidate && this.socket) {
+                this.socket.emit('p2p_ice_candidate', {
+                    to: remoteSocketId,
+                    candidate: event.candidate
+                });
+            }
+        };
+
+
+        pc.ondatachannel = (event) => {
+            this.setupDataChannel(remoteSocketId, event.channel);
+        };
+
+        this.peers.set(remoteSocketId, pc);
+        return pc;
+    }
+
+
+    private setupDataChannel(remoteSocketId: string, channel: RTCDataChannel) {
+        channel.onopen = () => console.log(`Data Channel open with ${remoteSocketId} ✅`);
+        channel.onmessage = (event) => {
+            console.log(`P2P Message from ${remoteSocketId}:`, event.data);
+            alert(`P2P says: ${event.data}`);
+        };
+        this.dataChannels.set(remoteSocketId, channel);
+    }
+
+
+    public async initiateP2P(remoteSocketId: string) {
+        const pc = this.createPeerConnection(remoteSocketId);
+
+        const channel = pc.createDataChannel("streamDropData");
+        this.setupDataChannel(remoteSocketId, channel);
+
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+
+        this.socket?.emit('p2p_offer', { to: remoteSocketId, offer });
+    }
 
     connect() {
         if (this.socket && this.isConnected) {
@@ -17,7 +66,7 @@ class SocketService {
             withCredentials: true,
             transports: ['websocket', 'polling']
         });
-        
+
         this.socket.on('connect', () => {
             console.log('Connected to StreamDrop:', this.socket?.id);
             this.isConnected = true;
@@ -33,6 +82,30 @@ class SocketService {
             this.isConnected = false;
         });
 
+        this.socket.on('p2p_offer', async ({ from, offer }) => {
+            const pc = this.createPeerConnection(from);
+            await pc.setRemoteDescription(new RTCSessionDescription(offer));
+
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+
+            this.socket?.emit('p2p_answer', { to: from, answer });
+        });
+
+
+        this.socket.on('p2p_answer', async ({ from, answer }) => {
+            const pc = this.peers.get(from);
+            if (pc) {
+                await pc.setRemoteDescription(new RTCSessionDescription(answer));
+            }
+        });
+
+        this.socket.on('p2p_ice_candidate', async ({ from, candidate }) => {
+            const pc = this.peers.get(from);
+            if (pc) {
+                await pc.addIceCandidate(new RTCIceCandidate(candidate));
+            }
+        });
         // Wait for connection before proceeding
         return new Promise<void>((resolve) => {
             if (this.socket) {
@@ -148,6 +221,18 @@ class SocketService {
     isSocketConnected() {
         return this.isConnected;
     }
+
+
+
+public sendDirectMessage(remoteSocketId: string, message: string) {
+    const channel = this.dataChannels.get(remoteSocketId);
+    if (channel && channel.readyState === 'open') {
+        channel.send(message);
+        console.log(`📤 P2P Sent to ${remoteSocketId}:`, message);
+    } else {
+        console.warn(`❌ Data Channel to ${remoteSocketId} is not open.`);
+    }
+}
 }
 
 const socketService = new SocketService();
