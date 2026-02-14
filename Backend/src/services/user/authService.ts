@@ -273,6 +273,7 @@ export class AuthService {
         throw new Error(`Google authentication failed: ${error.message}`);
     }
    }
+
 }
 
 export const authService = new AuthService(userRepository);

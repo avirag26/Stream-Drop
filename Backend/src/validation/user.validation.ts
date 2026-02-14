@@ -86,3 +86,21 @@ export const resetPasswordSchema = Joi.object({
             'any.required': 'Password is a required field'
         })
 });
+
+
+
+export const changePasswordSchema = Joi.object({
+    currentPassword: Joi.string().required().messages({
+        'string.empty': 'Current password is required',
+        'any.required': 'Current password is required'
+    }),
+    newPassword: Joi.string().pattern(/^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*])[^\s]+$/)
+        .trim()
+        .min(8)
+        .required()
+        .messages({
+            'string.pattern.base': 'Password must include at least one letter, one number, and one special character with no spaces',
+            'string.min': 'Password must be at least 8 characters long',
+            'any.required': 'Password is a required field'
+        })
+});

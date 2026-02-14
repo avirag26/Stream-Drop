@@ -36,7 +36,7 @@ class SocketService {
 
 
     private setupDataChannel(remoteSocketId: string, channel: RTCDataChannel) {
-        channel.onopen = () => console.log(`Data Channel open with ${remoteSocketId} ✅`);
+        channel.onopen = () => console.log(`Data Channel open with ${remoteSocketId} `);
         channel.onmessage = (event) => {
             console.log(`P2P Message from ${remoteSocketId}:`, event.data);
             alert(`P2P says: ${event.data}`);
@@ -106,7 +106,7 @@ class SocketService {
                 await pc.addIceCandidate(new RTCIceCandidate(candidate));
             }
         });
-        // Wait for connection before proceeding
+        
         return new Promise<void>((resolve) => {
             if (this.socket) {
                 this.socket.on('connect', () => {

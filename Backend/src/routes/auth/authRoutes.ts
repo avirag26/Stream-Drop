@@ -25,4 +25,5 @@ router.post('/google-login', authController.googleLogin);
 // Protected routes
 router.get('/status', AuthMiddleware.verifyToken, authController.checkStatus);
 
+
 export default router;
