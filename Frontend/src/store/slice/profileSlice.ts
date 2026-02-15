@@ -8,6 +8,7 @@ interface ProfileData {
   tier: string;
   is_verified: boolean;
   createdAt: string;
+  profilePhoto?: string;
 }
 
 interface ProfileState {
@@ -65,6 +66,26 @@ export const changePassword = createAsyncThunk(
   }
 );
 
+export const uploadProfilePhoto = createAsyncThunk(
+  'profile/uploadPhoto',
+  async (file: File, thunkApi) => {
+    try {
+      const formData = new FormData();
+      formData.append('photo', file);
+
+      const response = await api.post('/profile/upload-photo', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      if (response.data.success) {
+        return response.data.data.profilePhoto;
+      }
+    } catch (error: any) {
+      return thunkApi.rejectWithValue(error.response?.data?.message);
+    }
+  }
+)
+
 const profileSlice = createSlice({
   name: 'profile',
   initialState,
@@ -109,7 +130,21 @@ const profileSlice = createSlice({
       .addCase(changePassword.rejected, (state, action) => {
         state.passwordLoading = false;
         state.error = action.payload as string;
-      });
+      })
+      .addCase(uploadProfilePhoto.pending, (state) => {
+        state.updateLoading = true;
+        state.error = null;
+      })
+      .addCase(uploadProfilePhoto.fulfilled, (state, action) => {
+        state.updateLoading = false;
+        if (state.profile) {
+          state.profile.profilePhoto = action.payload;
+        }
+      })
+      .addCase(uploadProfilePhoto.rejected, (state, action) => {
+        state.updateLoading = false;
+        state.error = action.payload as string;
+      })
   },
 });
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store/store';
-import { fetchProfile, updateProfile } from '../../store/slice/profileSlice';
+import { fetchProfile, updateProfile, uploadProfilePhoto } from '../../store/slice/profileSlice';
 import Header from '../../components/user/Header';
 import Footer from '../../components/user/Footer';
 import Sidebar from '../../components/user/Sidebar';
@@ -62,6 +62,46 @@ const ProfilePage: React.FC = () => {
     }
   };
 
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setToast({ 
+        message: 'Please select an image file', 
+        type: 'error', 
+        show: true 
+      });
+      return;
+    }
+    
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setToast({ 
+        message: 'Image must be less than 5MB', 
+        type: 'error', 
+        show: true 
+      });
+      return;
+    }
+    
+    try {
+      await dispatch(uploadProfilePhoto(file)).unwrap();
+      setToast({ 
+        message: 'Profile photo updated successfully!', 
+        type: 'success', 
+        show: true 
+      });
+    } catch (error: any) {
+      setToast({ 
+        message: error || 'Failed to upload photo', 
+        type: 'error', 
+        show: true 
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0a0e1a] flex flex-col">
@@ -91,17 +131,42 @@ const ProfilePage: React.FC = () => {
                 {/* Profile Header */}
                 <div className="flex items-center space-x-6 mb-8">
                   <div className="relative">
-                    <div className="w-32 h-32 rounded-full bg-gradient-to-br from-orange-400 to-pink-400 flex items-center justify-center">
-                      <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <button className="absolute bottom-0 right-0 w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                    </button>
+                    {profile?.profilePhoto ? (
+                      <img 
+                        src={profile.profilePhoto} 
+                        alt="Profile" 
+                        className="w-32 h-32 rounded-full object-cover border-2 border-blue-500"
+                      />
+                    ) : (
+                      <div className="w-32 h-32 rounded-full bg-gradient-to-br from-orange-400 to-pink-400 flex items-center justify-center">
+                        <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    )}
+                    
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                      id="photo-upload"
+                      disabled={updateLoading}
+                    />
+                    
+                    <label 
+                      htmlFor="photo-upload" 
+                      className={`absolute bottom-0 right-0 w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors cursor-pointer ${updateLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      {updateLoading ? (
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      )}
+                    </label>
                   </div>
                   
                   <div>
@@ -238,11 +303,19 @@ const ProfilePage: React.FC = () => {
                     </div>
 
                     <div className="flex items-center space-x-3 p-3 bg-[#1a1f2e] rounded-lg">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-pink-400 flex items-center justify-center">
-                        <span className="text-white text-xs font-bold">
-                          {profile?.name?.charAt(0).toUpperCase() || 'A'}
-                        </span>
-                      </div>
+                      {profile?.profilePhoto ? (
+                        <img 
+                          src={profile.profilePhoto} 
+                          alt="Profile" 
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-pink-400 flex items-center justify-center">
+                          <span className="text-white text-xs font-bold">
+                            {profile?.name?.charAt(0).toUpperCase() || 'A'}
+                          </span>
+                        </div>
+                      )}
                       <div className="flex-1">
                         <p className="text-white text-sm font-medium">{profile?.name || 'Alex Streamer'}</p>
                         <p className="text-blue-400 text-xs">{user?.email || profile?.email}</p>

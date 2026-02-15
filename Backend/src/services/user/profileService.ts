@@ -1,5 +1,7 @@
 import { UserRepository, userRepository } from '../../repositories/User/user.repo';
 import bcrypt from 'bcryptjs';
+import { DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { s3Client,S3_CONFIG } from '../../config/s3.config';
 
 export class ProfileService {
     constructor(private userRepo: UserRepository) {}
@@ -16,7 +18,8 @@ export class ProfileService {
         email:user.email,
         tier:user.tier,
         is_verified:user.is_verified,
-        createdAt:user.createdAt
+        createdAt:user.createdAt,
+        profilePhoto:user.avatar
     };
    }
 
@@ -34,7 +37,8 @@ export class ProfileService {
         id:updateUser._id,
         name:updateUser.name,
         email:updateUser.email,
-        tier:updateUser.tier
+        tier:updateUser.tier,
+        profilePhoto:updateUser.avatar
      }
    }
 
@@ -51,6 +55,30 @@ export class ProfileService {
      await this.userRepo.updateById(userId,{password:hashedPassword});
 
      return {success:true}
+   }
+
+   async updateProfilePhoto(userId:string,photoUrl:string){
+    const user = await this.userRepo.findById(userId);
+
+    if(!user) throw new Error("User not found")
+
+      if(user.avatar){
+        try {
+          const oldKey = user.avatar.split('.com/')[1];
+          await s3Client.send(new DeleteObjectCommand({
+            Bucket:S3_CONFIG.bucket,
+            Key:oldKey,
+          }))
+        } catch (error:any) {
+           console.error("Error deleting old photo:",error);
+        }
+      }
+
+      const updated = await this.userRepo.updateById(userId,{
+        avatar:photoUrl
+      })
+
+      return updated
    }
 }
 

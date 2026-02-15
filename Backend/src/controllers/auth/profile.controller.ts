@@ -63,6 +63,36 @@ export class ProfileController{
         })
        }
     }
+
+    public uploadPhoto = async (req:AuthRequest,res:Response):Promise<void>=>{
+        try {
+            const userId=req.user!.id;
+            const file = req.file as any;
+
+            if(!file){
+                res.status(HTTP_STATUS.BAD_REQUEST).json({
+                    success:false,
+                    message:'No file uploaded'
+                });
+                return;
+            }
+
+            const photoUrl= file.location;
+
+            const updateUser = await this.profileService.updateProfilePhoto(userId,photoUrl);
+
+            res.status(HTTP_STATUS.OK).json({
+                success:true,
+                message:MESSAGES.PROFILE.UPDATE_SUCCESS,
+                data:{profilePhoto:updateUser?.avatar}
+            });
+        } catch (error:any) {
+            res.status(HTTP_STATUS.BAD_REQUEST).json({
+                success:false,
+                message:error.message
+            })
+        }
+    }
 }
 
 
