@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import { adminAuthService } from "../../services/admin/adminService.js";
+import { HTTP_STATUS } from "../../constants/httpStatus";
+import { MESSAGES } from "../../constants/messages";
 
 export class AdminAuthController {
     private setRefreshCookie(res: Response, token: string) {
@@ -14,9 +16,9 @@ export class AdminAuthController {
     public register = async (req: Request, res: Response): Promise<void> => {
         try {
             const admin = await adminAuthService.register(req.body)
-            res.status(201).json({
+            res.status(HTTP_STATUS.CREATED).json({
                 success: true,
-                message: "Admin created successfully",
+                message: MESSAGES.ADMIN.CREATED,
                 data: {
                     id: admin._id,
                     name: admin.name,
@@ -24,9 +26,9 @@ export class AdminAuthController {
                 }
             });
         } catch (error: any) {
-            res.status(400).json({
+            res.status(HTTP_STATUS.BAD_REQUEST).json({
                 success: false,
-                message: error.message || "Registration failed"
+                message: error.message || MESSAGES.ADMIN.REGISTRATION_FAILED
             })
         }
     };
@@ -38,15 +40,15 @@ export class AdminAuthController {
             
             this.setRefreshCookie(res, refreshToken);
 
-            res.status(200).json({
+            res.status(HTTP_STATUS.OK).json({
                 success: true,
-                message: "Admin authenticated successfully",
+                message: MESSAGES.ADMIN.LOGIN_SUCCESS,
                 data: { admin, token: accessToken }
             })
         } catch (error: any) {
-            res.status(401).json({
+            res.status(HTTP_STATUS.UNAUTHORIZED).json({
                 success: false,
-                message: error.message || "invalid credentials"
+                message: error.message || MESSAGES.ADMIN.INVALID_CREDENTIALS
             })
         }
     }
@@ -56,33 +58,33 @@ export class AdminAuthController {
             const token = req.cookies.adminRefreshToken;
             
             if (!token) {
-                res.status(400).json({
+                res.status(HTTP_STATUS.BAD_REQUEST).json({
                     success: false,
-                    message: "No refresh token provided"
+                    message: MESSAGES.AUTH.NO_REFRESH_TOKEN
                 });
                 return;
             }
 
             const result = await adminAuthService.refreshAccessToken(token);
 
-            res.status(200).json({
+            res.status(HTTP_STATUS.OK).json({
                 success: true,
-                message: "Admin token refreshed successfully",
+                message: MESSAGES.ADMIN.TOKEN_REFRESHED,
                 data: result
             });
         } catch (error: any) {
-            res.status(401).json({
+            res.status(HTTP_STATUS.UNAUTHORIZED).json({
                 success: false,
-                message: error.message || "Failed to refresh admin token"
+                message: error.message || MESSAGES.ADMIN.TOKEN_REFRESH_FAILED
             });
         }
     };
 
     public logout = async (req: Request, res: Response): Promise<void> => {
         res.clearCookie('adminRefreshToken');
-        res.status(200).json({ 
+        res.status(HTTP_STATUS.OK).json({ 
             success: true, 
-            message: "Admin logged out successfully" 
+            message: MESSAGES.ADMIN.LOGOUT_SUCCESS 
         });
     };
 
@@ -94,9 +96,9 @@ export class AdminAuthController {
             const status = req.query.status as string;
             
             const result = await adminAuthService.listUsers(page, limit, search, status);
-            res.status(200).json({
+            res.status(HTTP_STATUS.OK).json({
                 success: true,
-                message: "User retrieved successfully",
+                message: MESSAGES.ADMIN.USERS_RETRIEVED,
                 data: result.users,
                 pagination: {
                     totalUsers: result.totalUsers,
@@ -106,7 +108,7 @@ export class AdminAuthController {
                 }
             })
         } catch (error: any) {
-            res.status(500).json({
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
                 success: false,
                 message: error.message
             })
@@ -118,13 +120,16 @@ export class AdminAuthController {
             const { userId } = req.params;
             const result = await adminAuthService.toogleBlockStatus(userId as string);
 
-            res.status(200).json({
+            res.status(HTTP_STATUS.OK).json({
                 success: true,
-                message: `User ${result.is_blocked ? 'blocked' : 'unblocked'} successfully`,
+                message: `User ${result.is_blocked ? MESSAGES.ADMIN.USER_BLOCKED : MESSAGES.ADMIN.USER_UNBLOCKED} successfully`,
                 data: result
             })
         } catch (error: any) {
-            res.status(500).json({ success: false, message: error.message })
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ 
+                success: false, 
+                message: error.message 
+            })
         }
     }
 }

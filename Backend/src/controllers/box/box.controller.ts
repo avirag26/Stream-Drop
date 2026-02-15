@@ -1,7 +1,9 @@
 import { Request , Response } from "express";
 import { BoxService } from "@/services/box/boxService";
 import { boxService } from "@/services/box/boxService";
-import { AuthRequest } from "@/middlewares/auth.middleware"; 
+import { AuthRequest } from "@/middlewares/auth.middleware";
+import { HTTP_STATUS } from "@/constants/httpStatus";
+import { MESSAGES } from "@/constants/messages"; 
 export class BoxController {
     constructor(private boxService : BoxService){}
 
@@ -11,24 +13,24 @@ export class BoxController {
         const { boxName } = req.body;
 
         if (!boxName) {
-            res.status(400).json({
+            res.status(HTTP_STATUS.BAD_REQUEST).json({
                 success: false,
-                message: "Box name is required"
+                message: MESSAGES.BOX.NAME_REQUIRED
             });
             return;
         }
 
         const newBox = await this.boxService.createBox(userId, boxName)
 
-        res.status(201).json({
+        res.status(HTTP_STATUS.CREATED).json({
             success:true,
-            message:"Box created successfully",
+            message: MESSAGES.BOX.CREATED,
             data:newBox
         })
        } catch (error:any) {
-          res.status(500).json({
+          res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
                 success: false,
-                message: error.message || "Failed to create box"
+                message: error.message || MESSAGES.BOX.CREATE_FAILED
             });
        }
     }
@@ -39,18 +41,21 @@ export class BoxController {
             const box = await this.boxService.getBoxByCode(code)
 
             if(!box){
-                res.status(404).json({success:false,message:"Box not found"})
+                res.status(HTTP_STATUS.NOT_FOUND).json({
+                    success:false,
+                    message: MESSAGES.BOX.NOT_FOUND
+                })
                 return;
             }
-            res.status(200).json({
+            res.status(HTTP_STATUS.OK).json({
                 success: true,
-                message: "Box retrieved",
+                message: MESSAGES.BOX.RETRIEVED,
                 data: box
             });
         } catch (error: any) {
-            res.status(500).json({
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
                 success: false,
-                message: "Box not found"
+                message: MESSAGES.BOX.NOT_FOUND
             });
         }
     };
@@ -63,17 +68,20 @@ export class BoxController {
        console.log("er")
         console.log(box)
        if(!box){
-         res.status(404).json({success:false,message:"No active session"})
+         res.status(HTTP_STATUS.NOT_FOUND).json({
+            success:false,
+            message: MESSAGES.BOX.NO_ACTIVE_SESSION
+         })
          return;
        }
 
-       res.status(200).json({ 
+       res.status(HTTP_STATUS.OK).json({ 
             success: true, 
             data:box 
         });
 
        } catch (error:any){
-        res.status(500).json({
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
             success:false,
             message:error.message
         })
@@ -87,13 +95,13 @@ export class BoxController {
 
             const result = await this.boxService.removeBox(boxId as string,userId)
 
-            res.status(200).json({
+            res.status(HTTP_STATUS.OK).json({
                 success:true,
-                 message:"Box deleted successfully",
+                 message: MESSAGES.BOX.DELETED,
                  data:result
             })
         } catch (error:any) {
-            res.status(400).json({
+            res.status(HTTP_STATUS.BAD_REQUEST).json({
                 success:false,
                 message:error.message
             })

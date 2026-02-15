@@ -1,6 +1,8 @@
 import { Response } from "express";
 import { AuthRequest } from "@/middlewares/auth.middleware";
 import { ProfileService,profileService } from "@/services/user/profileService";
+import { HTTP_STATUS } from "@/constants/httpStatus";
+import { MESSAGES } from "@/constants/messages";
 
 export class ProfileController{
     constructor(private profileService:ProfileService){}
@@ -10,14 +12,14 @@ export class ProfileController{
             const userId=req.user!.id;
             const profile = await this.profileService.getProfile(userId);
 
-            res.status(200).json({
+            res.status(HTTP_STATUS.OK).json({
                 success:true,
                 data:profile
             })
         } catch (error:any) {
-            res.status(400).json({
+            res.status(HTTP_STATUS.BAD_REQUEST).json({
                 success:false,
-                message:error.message || 'failed to fetch prfile'
+                message:error.message || MESSAGES.PROFILE.FETCH_FAILED
             })
         }
     }
@@ -30,15 +32,15 @@ export class ProfileController{
 
             const updateProfile = await this.profileService.updateProfile(userId,updates);
 
-            res.status(200).json({
+            res.status(HTTP_STATUS.OK).json({
                 success:true,
-                message:'Profile update successfully',
+                message: MESSAGES.PROFILE.UPDATE_SUCCESS,
                 data:updateProfile
             })
         } catch (error:any) {
-            res.status(400).json({
+            res.status(HTTP_STATUS.BAD_REQUEST).json({
                 success:false,
-                message:error.message || "Failed to update profile"
+                message:error.message || MESSAGES.PROFILE.UPDATE_FAILED
             })
         }
     }
@@ -50,14 +52,14 @@ export class ProfileController{
 
         await this.profileService.changePasword(userId,currentPassword,newPassword);
 
-        res.status(200).json({
+        res.status(HTTP_STATUS.OK).json({
             success:true,
-            message:'Password chnaged successfullt'
+            message: MESSAGES.PROFILE.PASSWORD_CHANGED
         });
        } catch (error:any) {
-        res.status(400).json({
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
             success:false,
-            message:error.message || "Failed to chnage password"
+            message:error.message || MESSAGES.PROFILE.PASSWORD_CHANGE_FAILED
         })
        }
     }

@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { AuthService, authService } from '../../services/user/authService';
 import { AuthRequest } from '../../middlewares/auth.middleware';
+import { HTTP_STATUS } from '../../constants/httpStatus';
+import { MESSAGES } from '../../constants/messages';
 
 export class AuthController {
     constructor(private authService: AuthService) {}
@@ -20,17 +22,17 @@ export class AuthController {
             const result = await this.authService.preRegister(req.body);
          
             console.log(result.otp)
-            res.status(200).json({
+            res.status(HTTP_STATUS.OK).json({
                 success: true,
-                message: "OTP sent to email. Please verify to complete registration.",
+                message: MESSAGES.AUTH.OTP_SENT,
                 data:{
                     otp:result.otp
                 }
             });
         } catch (error: any) {
-            res.status(400).json({
+            res.status(HTTP_STATUS.BAD_REQUEST).json({
                 success: false,
-                message: error.message || 'Registration failed'
+                message: error.message || MESSAGES.AUTH.REGISTRATION_FAILED
             });
         }
     };
@@ -43,15 +45,15 @@ export class AuthController {
 
             this.setReshCookie(res,refreshToken)
 
-            res.status(201).json({
+            res.status(HTTP_STATUS.CREATED).json({
                 success: true,
-                message: "Account verified and created successfully",
+                message: MESSAGES.AUTH.ACCOUNT_VERIFIED,
                 data: {user,token:accessToken}
             });
         } catch (error: any) {
-            res.status(400).json({
+            res.status(HTTP_STATUS.BAD_REQUEST).json({
                 success: false,
-                message: error.message || "OTP verification failed"
+                message: error.message || MESSAGES.AUTH.OTP_VERIFICATION_FAILED
             });
         }
     };
@@ -63,15 +65,15 @@ export class AuthController {
             
             this.setReshCookie(res,refreshToken);
 
-            res.status(200).json({
+            res.status(HTTP_STATUS.OK).json({
                 success: true,
-                message: "Login successful",
+                message: MESSAGES.AUTH.LOGIN_SUCCESS,
                 data: {user,token:accessToken}
             });
         } catch (error: any) {
-            res.status(401).json({
+            res.status(HTTP_STATUS.UNAUTHORIZED).json({
                 success: false,
-                message: error.message || "Authentication failed"
+                message: error.message || MESSAGES.AUTH.AUTH_FAILED
             });
         }
     };
@@ -80,10 +82,16 @@ export class AuthController {
         try {
             const {email} = req.body;
             await this.authService.forgotPasswordRequest(email)
-            res.status(200).json({success:true,message:"Reset OTP sent to your email"});
+            res.status(HTTP_STATUS.OK).json({
+                success:true,
+                message: MESSAGES.AUTH.RESET_OTP_SENT
+            });
 
         } catch (error:any) {
-            res.status(400).json({success:false,message:error.message})
+            res.status(HTTP_STATUS.BAD_REQUEST).json({
+                success:false,
+                message:error.message
+            })
         }
     }
 
@@ -92,13 +100,16 @@ export class AuthController {
         const { email, otp } = req.body;
         const result = await this.authService.verifyResetOtp(email, otp);
         
-        res.status(200).json({
+        res.status(HTTP_STATUS.OK).json({
             success: true,
-            message: "OTP verified. You can now reset your password.",
+            message: MESSAGES.AUTH.OTP_VERIFIED,
             data: result 
         });
     } catch (error: any) {
-        res.status(400).json({ success: false, message: error.message });
+        res.status(HTTP_STATUS.BAD_REQUEST).json({ 
+            success: false, 
+            message: error.message 
+        });
     }
 };
 
@@ -108,12 +119,15 @@ export class AuthController {
         const { email, token, password } = req.body;
         await this.authService.finalizePasswordReset(email, token, password);
         
-        res.status(200).json({
+        res.status(HTTP_STATUS.OK).json({
             success: true,
-            message: "Password updated successfully."
+            message: MESSAGES.AUTH.PASSWORD_RESET_SUCCESS
         });
     } catch (error: any) {
-        res.status(400).json({ success: false, message: error.message });
+        res.status(HTTP_STATUS.BAD_REQUEST).json({ 
+            success: false, 
+            message: error.message 
+        });
     }
     };
 
@@ -123,27 +137,27 @@ export class AuthController {
             
             if (type === 'registration') {
                 const result = await this.authService.resendRegistrationOtp(email);
-                res.status(200).json({
+                res.status(HTTP_STATUS.OK).json({
                     success: true,
-                    message: "OTP resent successfully",
+                    message: MESSAGES.AUTH.OTP_RESENT,
                     data: { otp: result.otp }
                 });
             } else if (type === 'reset') {
                 await this.authService.resendResetOtp(email);
-                res.status(200).json({
+                res.status(HTTP_STATUS.OK).json({
                     success: true,
-                    message: "Reset OTP resent successfully"
+                    message: MESSAGES.AUTH.RESET_OTP_RESENT
                 });
             } else {
-                res.status(400).json({
+                res.status(HTTP_STATUS.BAD_REQUEST).json({
                     success: false,
-                    message: "Invalid OTP type"
+                    message: MESSAGES.AUTH.INVALID_OTP_TYPE
                 });
             }
         } catch (error: any) {
-            res.status(400).json({
+            res.status(HTTP_STATUS.BAD_REQUEST).json({
                 success: false,
-                message: error.message || "Failed to resend OTP"
+                message: error.message || MESSAGES.AUTH.RESEND_OTP_FAILED
             });
         }
     };
@@ -154,15 +168,15 @@ export class AuthController {
             const {user,accessToken,refreshToken} = await this.authService.googleLogin(credential);
             
             this.setReshCookie(res,refreshToken)
-            res.status(200).json({
+            res.status(HTTP_STATUS.OK).json({
                 success: true,
-                message: "Google login successful",
+                message: MESSAGES.AUTH.GOOGLE_LOGIN_SUCCESS,
                 data: {user,token:accessToken}
             });
         } catch (error: any) {
-            res.status(400).json({
+            res.status(HTTP_STATUS.BAD_REQUEST).json({
                 success: false,
-                message: error.message || "Google login failed"
+                message: error.message || MESSAGES.AUTH.GOOGLE_LOGIN_FAILED
             });
         }
     };
@@ -172,21 +186,21 @@ export class AuthController {
             const user = await this.authService.getUserById(userId);
             
             if (!user || user.is_blocked) {
-                res.status(403).json({
+                res.status(HTTP_STATUS.FORBIDDEN).json({
                     success: false,
-                    message: "Account suspended"
+                    message: MESSAGES.AUTH.ACCOUNT_SUSPENDED
                 });
                 return;
             }
 
-            res.status(200).json({
+            res.status(HTTP_STATUS.OK).json({
                 success: true,
-                message: "Active"
+                message: MESSAGES.AUTH.ACCOUNT_ACTIVE
             });
         } catch (error: any) {
-            res.status(401).json({
+            res.status(HTTP_STATUS.UNAUTHORIZED).json({
                 success: false,
-                message: "Invalid session"
+                message: MESSAGES.AUTH.INVALID_SESSION
             });
         }
     };
@@ -194,22 +208,28 @@ export class AuthController {
     public refreshToken = async (req:Request,res:Response):Promise<void>=>{
         try {
             const token = req.cookies.refreshToken;
-            if(!token) throw new Error("No refresh token provided");
+            if(!token) throw new Error(MESSAGES.AUTH.NO_REFRESH_TOKEN);
 
             const {accessToken}=await this.authService.refreshAccessToken(token)
 
-            res.status(200).json({
+            res.status(HTTP_STATUS.OK).json({
                 success:true,
                 data:{token:accessToken}
             })
         } catch (error:any) {
-            res.status(403).json({ success: false, message: "Invalid session" });
+            res.status(HTTP_STATUS.FORBIDDEN).json({ 
+                success: false, 
+                message: MESSAGES.AUTH.INVALID_SESSION 
+            });
         }
     }
 
     public logout = async (req: Request, res: Response): Promise<void> => {
         res.clearCookie('refreshToken');
-        res.status(200).json({ success: true, message: "Logged out" });
+        res.status(HTTP_STATUS.OK).json({ 
+            success: true, 
+            message: MESSAGES.AUTH.LOGOUT_SUCCESS 
+        });
     };
 }
 

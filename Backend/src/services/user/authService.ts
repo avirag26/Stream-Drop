@@ -162,7 +162,7 @@ export class AuthService {
    }
 
    async resendRegistrationOtp(email: string) {
-    // Check if there's a pending registration for this email
+  
     const cachedData = await redisClient.get(`temp_user:${email}`);
     if (!cachedData) throw new Error("No pending registration found for this email");
 
