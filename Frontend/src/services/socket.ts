@@ -1,6 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 
-const SOCKET_URL = 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
 
 class SocketService {
     public socket: Socket | null = null;
@@ -228,9 +228,9 @@ public sendDirectMessage(remoteSocketId: string, message: string) {
     const channel = this.dataChannels.get(remoteSocketId);
     if (channel && channel.readyState === 'open') {
         channel.send(message);
-        console.log(`📤 P2P Sent to ${remoteSocketId}:`, message);
+        console.log(` P2P Sent to ${remoteSocketId}:`, message);
     } else {
-        console.warn(`❌ Data Channel to ${remoteSocketId} is not open.`);
+        console.warn(` Data Channel to ${remoteSocketId} is not open.`);
     }
 }
 }

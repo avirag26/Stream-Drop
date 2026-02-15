@@ -1,5 +1,5 @@
 export const MESSAGES = {
-  // Auth Messages
+ 
   AUTH: {
     OTP_SENT: 'OTP sent to email. Please verify to complete registration.',
     ACCOUNT_VERIFIED: 'Account verified and created successfully',
@@ -16,7 +16,7 @@ export const MESSAGES = {
     INVALID_SESSION: 'Invalid session',
     NO_REFRESH_TOKEN: 'No refresh token provided',
     
-    // Errors
+    
     REGISTRATION_FAILED: 'Registration failed',
     OTP_VERIFICATION_FAILED: 'OTP verification failed',
     AUTH_FAILED: 'Authentication failed',
@@ -25,19 +25,19 @@ export const MESSAGES = {
     GOOGLE_LOGIN_FAILED: 'Google login failed',
   },
 
-  // Profile Messages
+  
   PROFILE: {
     FETCH_SUCCESS: 'Profile fetched successfully',
     UPDATE_SUCCESS: 'Profile update successfully',
     PASSWORD_CHANGED: 'Password changed successfully',
     
-    // Errors
+    
     FETCH_FAILED: 'Failed to fetch profile',
     UPDATE_FAILED: 'Failed to update profile',
     PASSWORD_CHANGE_FAILED: 'Failed to change password',
   },
 
-  // Box Messages
+  
   BOX: {
     CREATED: 'Box created successfully',
     RETRIEVED: 'Box retrieved',
@@ -46,11 +46,11 @@ export const MESSAGES = {
     NOT_FOUND: 'Box not found',
     NO_ACTIVE_SESSION: 'No active session',
     
-    // Errors
+    
     CREATE_FAILED: 'Failed to create box',
   },
 
-  // Admin Messages
+  
   ADMIN: {
     CREATED: 'Admin created successfully',
     LOGIN_SUCCESS: 'Admin authenticated successfully',
@@ -60,13 +60,13 @@ export const MESSAGES = {
     USER_BLOCKED: 'blocked',
     USER_UNBLOCKED: 'unblocked',
     
-    // Errors
+    
     REGISTRATION_FAILED: 'Registration failed',
     INVALID_CREDENTIALS: 'invalid credentials',
     TOKEN_REFRESH_FAILED: 'Failed to refresh admin token',
   },
 
-  // Common
+  
   COMMON: {
     SUCCESS: 'Operation successful',
     FAILED: 'Operation failed',

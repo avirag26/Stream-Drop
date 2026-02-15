@@ -10,6 +10,7 @@ import boxRoutes from './src/routes/box/box.routes';
 import profileRoutes from './src/routes/auth/profile.routes'
 import adminRoutes from './src/routes/admin/adminRoutes';
 import { setupSocketHandlers } from './src/socket/socketHandler';
+import { ErrorHandler } from './src/middlewares/errorHandler.middleware';
 
 dotenv.config();
 
@@ -18,7 +19,10 @@ const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
     cors: {
-        origin: "*", 
+        origin: [
+            process.env.FRONTEND_URL || 'http://localhost:5173',
+            process.env.FRONTEND_URL_ALT || 'http://localhost:5174'
+        ], 
         methods: ['GET', 'POST'],
         credentials: true
     },
@@ -28,22 +32,34 @@ const io = new Server(httpServer, {
 const PORT = process.env.PORT || 5000;
 
 connectDB();
+
+// Middleware
 app.use(cookieParser())
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:5174'],
+    origin: [
+        process.env.FRONTEND_URL || 'http://localhost:5173',
+        process.env.FRONTEND_URL_ALT || 'http://localhost:5174'
+    ],
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
     credentials: true
 }));
 app.use(express.json());
+
+// Routes
+app.get('/', (_req, res) => {
+    res.send('StreamDrop API is running....');
+});
 
 app.use('/api/auth', authRoutes);
 app.use('/api/box', boxRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/profile', profileRoutes);
 
-app.get('/', (_req, res) => {
-    res.send('StreamDrop API is running....');
-});
+// 404 Handler - Must be after all routes
+app.use(ErrorHandler.notFound);
+
+// Global Error Handler - Must be last
+app.use(ErrorHandler.handle);
 
 setupSocketHandlers(io);
 

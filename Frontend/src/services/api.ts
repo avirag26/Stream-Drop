@@ -3,7 +3,7 @@ import { logout } from '../store/slice/authSlice';
 import { logout as adminLogout } from '../store/slice/adminSlice';
 
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
   withCredentials: true, // Important for cookies
 });
 

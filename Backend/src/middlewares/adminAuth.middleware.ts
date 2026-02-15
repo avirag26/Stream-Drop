@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { IPayload } from '../interface/auth/auth.interface';
+import { HTTP_STATUS } from '../constants/httpStatus';
+import { MESSAGES } from '../constants/messages';
 
 export interface AdminAuthRequest extends Request {
     admin?: IPayload;
@@ -11,7 +13,10 @@ export class AdminAuthMiddleware {
         const authHeader = req.headers.authorization;
 
         if (!authHeader || !authHeader.startsWith('Bearer')) {
-            res.status(401).json({ success: false, message: "Access denied. No token provided." });
+            res.status(HTTP_STATUS.UNAUTHORIZED).json({ 
+                success: false, 
+                message: "Access denied. No token provided." 
+            });
             return;
         }
 
@@ -22,14 +27,20 @@ export class AdminAuthMiddleware {
 
            
             if (decoded.role !== 'admin') {
-                res.status(403).json({ success: false, message: "Access denied. Admin privileges required." });
+                res.status(HTTP_STATUS.FORBIDDEN).json({ 
+                    success: false, 
+                    message: "Access denied. Admin privileges required." 
+                });
                 return;
             }
 
             req.admin = decoded;
             next();
         } catch (error) {
-            res.status(401).json({ success: false, message: "Invalid or expired token." });
+            res.status(HTTP_STATUS.UNAUTHORIZED).json({ 
+                success: false, 
+                message: MESSAGES.AUTH.INVALID_SESSION 
+            });
         }
     };
 }
