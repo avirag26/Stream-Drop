@@ -104,3 +104,18 @@ export const changePasswordSchema = Joi.object({
             'any.required': 'Password is a required field'
         })
 });
+
+
+export const chnageNameSchema=Joi.object({
+     name: Joi.string()
+    .trim() 
+    .pattern(/^[A-Za-z]+(?:\s[A-Za-z]+)*$/) 
+    .min(3)
+    .required()
+    .messages({
+        'string.pattern.base': 'Name must only contain alphabets and cannot start/end with a space',
+        'string.empty': 'Name cannot be empty',
+        'string.min': 'Name must be at least 3 characters long',
+        'any.required': 'Name is required'
+    }),
+})

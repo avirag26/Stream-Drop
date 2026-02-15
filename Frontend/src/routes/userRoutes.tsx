@@ -10,7 +10,8 @@ import ResetPassword from '../pages/user/reset-password';
 import BoxPage from '../pages/user/box';
 import NotFound from '../pages/NotFound';
 import AuthGuard from '../components/common/AuthGuard';
-
+import ProfilePage from '../pages/user/profile';
+import SecurityPage from '../pages/user/security';
 const UserRoutes: React.FC = () => {
   return (
     <Routes>
@@ -25,6 +26,8 @@ const UserRoutes: React.FC = () => {
       <Route element={<AuthGuard />}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/box/:boxCode" element={<BoxPage />} />
+        <Route path="/profile" element={<ProfilePage/>}/>
+        <Route path="/security" element={<SecurityPage/>}/>
       </Route>
       
       <Route path="*" element={<NotFound />} />
