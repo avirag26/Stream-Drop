@@ -68,7 +68,7 @@ const Home: React.FC = () => {
           <div className="flex justify-center mb-12">
             <div className="bg-blue-600/10 border border-blue-500/20 rounded-full px-4 py-2 backdrop-blur-sm">
               <span className="text-blue-400 text-[10px] font-black tracking-[0.3em] uppercase">
-                ⚡ StreamDrop Command Center
+               StreamDrop Center
               </span>
             </div>
           </div>
@@ -168,9 +168,7 @@ const Home: React.FC = () => {
                   <div className="text-gray-600 text-[10px] font-bold uppercase tracking-tighter">TB Shared</div>
                 </div>
                 <div className="h-10 w-[1px] bg-gray-800"></div>
-                <button className="bg-white text-black px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-gray-200 transition-colors">
-                  View Docs
-                </button>
+               
               </div>
             </div>
           </div>

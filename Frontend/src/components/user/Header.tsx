@@ -6,6 +6,7 @@ import type { RootState, AppDispatch } from '../../store/store';
 
 const Header: React.FC = () => {
   const { user, token } = useSelector((state: RootState) => state.auth);
+  const { profile } = useSelector((state: RootState) => state.profile);
   const dispatch = useDispatch<AppDispatch>();
 
   const handleLogout = () => {
@@ -30,8 +31,11 @@ const Header: React.FC = () => {
 
           {/* Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
+            <Link to='/'>
+            <span className="text-gray-300 hover:text-white transition-colors">Home</span>
+            </Link>
             <a href="#" className="text-gray-300 hover:text-white transition-colors">
-              Pricing
+              Upgrade
             </a>
             <a href="#" className="text-gray-300 hover:text-white transition-colors">
               Security
@@ -47,10 +51,12 @@ const Header: React.FC = () => {
               // Logged in user - show profile dropdown
               <div className="relative group">
                 <button className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors">
-                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                    </svg>
+                  <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center">
+                    <img
+                      src={profile?.profilePhoto}
+                      alt="profile"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <span className="hidden md:block">{user.name || user.email}</span>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -64,8 +70,8 @@ const Header: React.FC = () => {
                     <div className="px-4 py-3 text-sm text-gray-400 border-b border-gray-700">
                       {user.email}
                     </div>
-                    <Link 
-                      to="/profile" 
+                    <Link
+                      to="/profile"
                       className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
                     >
                       Profile

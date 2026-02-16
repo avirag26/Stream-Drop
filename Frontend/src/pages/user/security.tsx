@@ -247,14 +247,7 @@ const SecurityPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="pt-2">
-                      <h2 className="text-lg font-semibold text-white mb-4">CONFIRM NEW KEY</h2>
-                      <input
-                        type="text"
-                        placeholder="Re-enter for verification"
-                        className="w-full px-4 py-3 bg-[#0f1419] text-white rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500 transition-colors mb-6"
-                      />
-                    </div>
+                    
 
                     <div className="flex space-x-3">
                       <button
@@ -270,6 +263,7 @@ const SecurityPage: React.FC = () => {
                       <button
                         type="button"
                         className="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
+                        
                       >
                         Reset Form
                       </button>
@@ -277,24 +271,7 @@ const SecurityPage: React.FC = () => {
                   </form>
 
                   {/* Hazardous Action */}
-                  <div className="mt-8 pt-6 border-t border-gray-800">
-                    <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
-                      <div className="flex items-start space-x-3">
-                        <svg className="w-5 h-5 text-red-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                        </svg>
-                        <div className="flex-1">
-                          <h3 className="text-red-400 font-semibold mb-1">Hazardous Action</h3>
-                          <p className="text-gray-400 text-sm mb-3">
-                            Deactivating your account will permanently revoke access to all shared vaults and encrypted data storage.
-                          </p>
-                          <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium">
-                            INITIATE ACCOUNT TERMINATION
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                 
                 </div>
               </div>
 

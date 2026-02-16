@@ -154,24 +154,33 @@ const BoxPage: React.FC = () => {
       setMessages(prev => [...prev, leaveMsg]);
     });
 
-    // Set up users updated listener with P2P initiation
+    
     socketService.onUsersUpdated((data: any) => {
-      console.log('👥 Users updated:', data);
+      console.log(' Users updated:', data);
       setConnectedUsers(data.users);
       setActiveUsers(data.count);
 
-      // Small delay to ensure socket handlers are ready
+     
       setTimeout(() => {
-        // Initiate P2P with all other users
+   
         data.users.forEach((remoteUser: ConnectedUser) => {
           if (remoteUser.id !== socketService.socket?.id) {
-            console.log(`🤝 Initiating P2P with: ${remoteUser.name} (${remoteUser.id})`);
+            console.log(`Initiating P2P with: ${remoteUser.name} (${remoteUser.id})`);
             socketService.initiateP2P(remoteUser.id);
           }
         });
-      }, 100);
+      }, 1000);
     });
 
+    
+    socketService.onP2PMessage((data) => {
+      console.log('📨 P2P Message received:', data);
+      setToast({
+        message: `P2P Message: ${data.message}`,
+        type: 'success',
+        show: true
+      });
+    });
 
     return () => {
       socketService.removeAllListeners();
@@ -195,7 +204,7 @@ const BoxPage: React.FC = () => {
 
     try {
       if (boxData?.creatorId === user.id) {
-        // Use Redux action to delete the box
+
         await dispatch(deleteBox(boxData._id)).unwrap();
         setToast({
           message: "Box deleted successfully",
@@ -204,7 +213,7 @@ const BoxPage: React.FC = () => {
         });
         navigate('/dashboard');
       } else {
-        // Regular users just leave the box
+   
         socketService.disconnect();
         navigate('/dashboard');
       }

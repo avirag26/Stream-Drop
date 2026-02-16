@@ -9,6 +9,7 @@ class SocketService {
     private isConnected: boolean = false;
     private peers: Map<string, RTCPeerConnection> = new Map();
     private dataChannels: Map<string, RTCDataChannel> = new Map();
+    private p2pMessageCallback: ((data: { from: string; message: string; timestamp: string }) => void) | null = null;
 
     private createPeerConnection(remoteSocketId: string) {
         const pc = new RTCPeerConnection({
@@ -36,12 +37,39 @@ class SocketService {
 
 
     private setupDataChannel(remoteSocketId: string, channel: RTCDataChannel) {
-        channel.onopen = () => console.log(`Data Channel open with ${remoteSocketId} `);
-        channel.onmessage = (event) => {
-            console.log(`P2P Message from ${remoteSocketId}:`, event.data);
-            alert(`P2P says: ${event.data}`);
+        channel.onopen = () => {
+            console.log(` Data Channel open with ${remoteSocketId}`);
+            this.dataChannels.set(remoteSocketId, channel);
         };
+        
+        channel.onclose = () => {
+            console.log(` Data Channel closed with ${remoteSocketId}`);
+            this.dataChannels.delete(remoteSocketId);
+        };
+        
+        channel.onerror = (error) => {
+            console.error(` Data Channel error with ${remoteSocketId}:`, error);
+        };
+        
+        channel.onmessage = (event) => {
+            console.log(` P2P Message from ${remoteSocketId}:`, event.data);
+            alert(`p2p says ${event.data}`)
+           
+            if (this.p2pMessageCallback) {
+                this.p2pMessageCallback({
+                    from: remoteSocketId,
+                    message: event.data,
+                    timestamp: new Date().toISOString()
+                });
+            }
+        };
+        
+     
         this.dataChannels.set(remoteSocketId, channel);
+    }
+
+    public onP2PMessage(callback: (data: { from: string; message: string; timestamp: string }) => void) {
+        this.p2pMessageCallback = callback;
     }
 
 
