@@ -42,6 +42,7 @@ export const registerUser = createAsyncThunk('auth/register', async (userData: a
 export const verifyAccountOtp = createAsyncThunk('auth/verifyAccount', async (data: { email: string, otp: string }, thunkApi) => {
     try {
         const response = await api.post('/auth/verify-otp', data);
+      
         if (response.data.success) {
             return response.data.data;
         }
@@ -53,6 +54,7 @@ export const verifyAccountOtp = createAsyncThunk('auth/verifyAccount', async (da
 export const loginUser = createAsyncThunk('auth/login', async (credentials: any, thunkApi) => {
     try {
         const response = await api.post('/auth/login', credentials);
+         
         if (response.data.success) {
             return response.data.data
         }
@@ -102,6 +104,7 @@ export const resendOtp = createAsyncThunk('auth/resendOtp', async (data: { email
 export const googleLogin = createAsyncThunk('auth/googleLogin', async (credential: string, thunkApi) => {
     try {
         const response = await api.post('/auth/google-login', { credential });
+       
         if (response.data.success) {
             return response.data.data;
         }

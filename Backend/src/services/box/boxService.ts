@@ -1,5 +1,5 @@
 import { BoxRepository ,boxRepository} from "@/repositories/Box/box.repo";
-import crypto from  'crypto'
+import { generateBoxCode } from "@/utils/codeGenerator.utils";
 
 export class BoxService{
     constructor(private repo:BoxRepository){}
@@ -23,7 +23,7 @@ export class BoxService{
         let code = '';
 
         while (!isUnique) {
-            code = crypto.randomInt(100000, 999999).toString();
+            code = generateBoxCode();
             const existing = await this.repo.findByCode(code);
             if (!existing) isUnique = true;
         }

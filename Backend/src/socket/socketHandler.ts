@@ -89,7 +89,6 @@ export const setupSocketHandlers = (io: Server) => {
             });
         });
 
-        // --- WEBRTC SIGNALING HANDLERS ---
 
         
         socket.on("p2p_offer", (data: { to: string, offer: any }) => {

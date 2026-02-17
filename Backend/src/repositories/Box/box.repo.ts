@@ -22,6 +22,14 @@ export class BoxRepository extends BaseRepository<IBoxDocument>{
             creatorId:creatorId
         })
      }
+
+  async countActiveBoxesByUser(userId: string): Promise<number> {
+    return await this.model.countDocuments({ 
+        creatorId: userId,
+        expiresAt: { $gt: new Date() }
+    });
+ }
+ 
 }
 
 export const boxRepository = new BoxRepository();

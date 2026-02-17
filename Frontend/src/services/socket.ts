@@ -184,9 +184,9 @@ class SocketService {
 
     onMessage(callback: (data: any) => void) {
         if (this.socket) {
-            console.log('👂 Setting up message listener');
+            console.log(' Setting up message listener');
             this.socket.on('receive_message', (data) => {
-                console.log('📥 Received message:', data);
+                console.log(' Received message:', data);
                 callback(data);
             });
         }

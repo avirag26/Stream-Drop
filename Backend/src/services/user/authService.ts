@@ -6,6 +6,7 @@ import redisClient from "../../config/redis";
 import { mailService } from "../mail/mail.service";
 import { OAuth2Client } from 'google-auth-library';
 import { generateToken, verifyRefreshToken } from "../../utils/jwt.utils";
+import { generateOTP, generateResetToken } from "../../utils/codeGenerator.utils";
 export class AuthService {
     private googleClient: OAuth2Client;
 
@@ -19,7 +20,7 @@ export class AuthService {
         if (existing) throw new Error('User already exists');
 
         
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otp = generateOTP();
         
 
         const hashedPassword = await bcrypt.hash(userData.password, 12);
@@ -79,6 +80,7 @@ export class AuthService {
 
     async login(email: string, pass: string) {
         const user = await this.userRepo.findByEmail(email);
+       
         if (!user) throw new Error("Invalid email or password");
 
         const isMatch = await bcrypt.compare(pass, user.password);
@@ -126,7 +128,7 @@ export class AuthService {
         const user = await this.userRepo.findByEmail(email);
         if(!user) throw new Error("No account  found with this email");
 
-        const otp = Math.floor(100000+Math.random()*900000).toString();
+        const otp = generateOTP();
 
         await redisClient.setEx(`reset_otp:${email}`,300,otp);
 
@@ -139,7 +141,7 @@ export class AuthService {
     if (!cachedOtp || cachedOtp !== otp) throw new Error("Invalid or expired OTP");
 
     
-    const resetToken = Math.random().toString(36).substring(2, 15);
+    const resetToken = generateResetToken();
     
 
     await redisClient.setEx(`reset_token:${email}`, 600, resetToken);
@@ -169,7 +171,7 @@ export class AuthService {
     const userData = JSON.parse(cachedData);
     
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = generateOTP();
     
   
     userData.otp = otp;
@@ -192,7 +194,7 @@ export class AuthService {
     const user = await this.userRepo.findByEmail(email);
     if (!user) throw new Error("No account found with this email");
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = generateOTP();
 
     await redisClient.setEx(`reset_otp:${email}`, 300, otp);
 
@@ -264,7 +266,8 @@ export class AuthService {
                 name: user.name, 
                 email: user.email, 
                 tier: user.tier,
-                avatar: user.avatar 
+                avatar: user.avatar ,
+               
             },
             accessToken,
             refreshToken

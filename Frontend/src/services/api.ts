@@ -4,10 +4,10 @@ import { logout as adminLogout } from '../store/slice/adminSlice';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
-  withCredentials: true, // Important for cookies
+  withCredentials: true, 
 });
 
-// Flag to prevent multiple refresh attempts
+
 let isRefreshing = false;
 let failedQueue: Array<{
   resolve: (value?: any) => void;
@@ -56,7 +56,7 @@ api.interceptors.response.use(
     const { store } = await import('../store/store');
     const originalRequest = error.config;
 
-    // Check if it's a login request (preserve your existing logic)
+
     const isLoginRequest = error.config?.url?.includes('/auth/login') || 
                           error.config?.url?.includes('/auth/google') ||
                           error.config?.url?.includes('/admin/login');
@@ -64,16 +64,16 @@ api.interceptors.response.use(
     if (error.response) {
       const status = error.response.status;
 
-      // Handle login failures (your existing logic)
+
       if ((status === 401 || status === 403) && isLoginRequest) {
         console.warn("Login failed or account blocked.");
         return Promise.reject(error);
       }
 
-      // Handle token expiration for authenticated requests
+
       if (status === 401 && !originalRequest._retry && !isLoginRequest) {
         if (isRefreshing) {
-          // If already refreshing, queue this request
+     
           return new Promise((resolve, reject) => {
             failedQueue.push({ resolve, reject });
           }).then(() => {
@@ -87,16 +87,16 @@ api.interceptors.response.use(
         isRefreshing = true;
 
         try {
-          // Determine if it's admin or user request
+       
           const isAdminRequest = originalRequest.url?.includes('/admin');
           const refreshEndpoint = isAdminRequest ? '/admin/refresh-token' : '/auth/refresh-token';
           
-          // Attempt to refresh token
+   
           const response = await api.post(refreshEndpoint);
           const newToken = response.data.data.accessToken || response.data.data.token;
 
           if (newToken) {
-            // Update token in store
+          
             if (isAdminRequest) {
               const { setToken } = await import('../store/slice/adminSlice');
               store.dispatch(setToken(newToken));
@@ -105,18 +105,18 @@ api.interceptors.response.use(
               store.dispatch(setToken(newToken));
             }
 
-            // Update authorization header for the original request
+       
             originalRequest.headers.Authorization = `Bearer ${newToken}`;
             
             processQueue(null, newToken);
             
-            // Retry the original request
+          
             return api(originalRequest);
           }
         } catch (refreshError) {
           processQueue(refreshError, null);
           
-          // Refresh failed, logout user
+    
           console.warn("Session expired. Logging out...");
           
           if (originalRequest.url?.includes('/admin')) {
@@ -133,7 +133,7 @@ api.interceptors.response.use(
         }
       }
 
-      // Handle other 403 errors (account blocked, etc.)
+      
       if (status === 403 && !isLoginRequest) {
         console.warn("Account blocked or insufficient permissions. Logging out...");
         

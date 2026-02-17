@@ -44,7 +44,9 @@ export class ProfileService {
 
    async changePasword(userId:string,currentPassword:string,newPassword:string){
      const user = await this.userRepo.findById(userId);
-
+    if(user?.googleId){
+      throw new Error("User signed with google")
+    }
      if(!user)throw new Error("User not found");
 
      const isMatch=await bcrypt.compare(currentPassword,user.password);

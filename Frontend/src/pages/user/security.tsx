@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, use } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store/store';
 import { changePassword } from '../../store/slice/profileSlice';
@@ -343,10 +343,7 @@ const SecurityPage: React.FC = () => {
                         <span className="text-gray-400">API Key Rotation</span>
                         <span className="text-gray-500">8d ago</span>
                       </div>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-cyan-400">Password Last Changed</span>
-                        <span className="text-gray-500">10d ago</span>
-                      </div>
+                     
                     </div>
                   </div>
                 </div>

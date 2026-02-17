@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken'
 import { IPayload } from '../interface/auth/auth.interface'
 import { HTTP_STATUS } from '../constants/httpStatus'
 import { MESSAGES } from '../constants/messages'
+import { Role, ROLES } from '@/interface/role'
 
 export interface AuthRequest extends Request {
     user?: IPayload;
@@ -26,7 +27,7 @@ export class AuthMiddleware {
             const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as IPayload;
 
       
-            if (decoded.role && decoded.role !== 'user') {
+            if (decoded.role && decoded.role !== ROLES.USER) {
                 res.status(HTTP_STATUS.FORBIDDEN).json({ 
                     success: false, 
                     message: "Access denied. Invalid user token." 
