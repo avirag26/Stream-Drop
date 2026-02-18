@@ -87,7 +87,7 @@ class SocketService {
 
     connect() {
         if (this.socket && this.isConnected) {
-            return; // Already connected
+            return; 
         }
 
         this.socket = io(SOCKET_URL, {

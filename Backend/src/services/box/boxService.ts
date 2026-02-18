@@ -5,6 +5,15 @@ export class BoxService{
     constructor(private repo:BoxRepository){}
 
     public async createBox(userId:string | null, boxName:string){
+
+         const existingBox = await this.repo.findLatestByCreator(userId as string);
+    
+    if (existingBox) {
+        const isExpired = new Date() > new Date(existingBox.expiresAt);
+        if (!isExpired) {
+            throw new Error("You already have an active box. Please close it before creating a new one.");
+        }
+    }
         const code = await this.generateUniqueCode();
         
        const expiry = new Date(Date.now() + 600000);

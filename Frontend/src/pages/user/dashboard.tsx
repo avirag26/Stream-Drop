@@ -255,7 +255,7 @@ const Dashboard: React.FC = () => {
                           <span className="text-[10px] font-bold text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded uppercase">
                             {generatedCode ? `Code: ${generatedCode}` : 'Encrypted'}
                           </span>
-                          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">0 Watchers Joined</span>
+                         
                         </div>
                       </div>
                     </div>
